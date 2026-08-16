@@ -446,6 +446,47 @@ async function showContactDetail(contactId) {
     `電話：${contact.phone || ''}\n` +
     `メール：${contact.email || ''}`
   );
+  if (confirm('この人物の営業活動を登録しますか？')) {
+  await addActivity(contactId);
+}
+}
+  async function addActivity(contactId) {
+  const activityDate = prompt('活動日を入力してください（例：2026-08-17）');
+  if (!activityDate) return;
+
+  const activityType = prompt('活動内容の種類を入力してください（例：訪問、電話、メール、見積提出）');
+  if (!activityType) return;
+
+  const notes = prompt('内容を入力してください');
+  if (notes === null) return;
+
+  const nextFollowupDate = prompt('次回フォロー日を入力してください（なければ空欄）');
+
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/activities`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      },
+      body: JSON.stringify({
+        contact_id: contactId,
+        activity_date: activityDate,
+        activity_type: activityType,
+        notes: notes,
+        next_followup_date: nextFollowupDate || null
+      })
+    }
+  );
+
+  if (!response.ok) {
+    alert('営業活動の登録に失敗しました');
+    return;
+  }
+
+  alert('営業活動を登録しました！');
 }
 </script>
 </body>
