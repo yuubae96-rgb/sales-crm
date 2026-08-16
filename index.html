@@ -73,6 +73,7 @@
     <p>名刺を撮影して、会社・人物情報を登録します。</p>
     <input type="file" id="cardCamera" accept="image/*" capture="environment" style="display:none;">
 <button class="primary" onclick="document.getElementById('cardCamera').click()">名刺を撮影</button>
+<img id="cardPreview" style="display:none; width:100%; margin-top:15px; border-radius:12px;">
   </div>
 
   <div class="card">
@@ -94,6 +95,15 @@
   </div>
 
 </main>
+<script>
+document.getElementById('cardCamera').addEventListener('change', function () {
+  const file = this.files[0];
+  if (!file) return;
 
+  const preview = document.getElementById('cardPreview');
+  preview.src = URL.createObjectURL(file);
+  preview.style.display = 'block';
+});
+</script>
 </body>
 </html>
