@@ -315,6 +315,7 @@ alert('登録できました！');
 
 });
   document.getElementById('companyListButton').addEventListener('click', async function () {
+    alert("会社一覧ボタン押した！");
   const response = await fetch(
     `${SUPABASE_URL}/rest/v1/companies?select=id,company_name,address,phone&order=company_name.asc`,
     {
