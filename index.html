@@ -105,6 +105,45 @@ document.getElementById('cardCamera').addEventListener('change', function () {
   preview.src = URL.createObjectURL(file);
   preview.style.display = 'block';
 });
+ document.getElementById('readCardButton').addEventListener('click', async function () {
+  const fileInput = document.getElementById('cardCamera');
+  const file = fileInput.files[0];
+
+  if (!file) {
+    alert('先に名刺を撮影してください');
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = async function () {
+    const imageBase64 = reader.result;
+
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/read-business-card`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        },
+        body: JSON.stringify({
+          image: imageBase64
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    console.log(data);
+    alert('名刺を読み取りました。次に内容を表示する画面を作ります。');
+  };
+
+  reader.readAsDataURL(file);
+}); 
 </script>
+  const SUPABASE_URL = "https://emauqxftmauvsffdjvyh.supabase.co/rest/v1/";
+  const SUPABASE_KEY = "sb_publishable_9rgwKLiJU9dGVkqttq0-fQ_hrhNqnfa";
 </body>
 </html>
