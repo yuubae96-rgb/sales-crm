@@ -371,7 +371,15 @@ alert('登録できました！');
   </strong><br>
   <span>${company.address || ''}</span><br>
   <span>${company.phone || ''}</span>
-  <br><span>営業状況：${company.sales_status || '未設定'}</span>
+  <br>
+<span>営業状況：</span>
+<select onchange="updateSalesStatus(${company.id}, this.value)">
+  <option value="未訪問" ${company.sales_status === '未訪問' ? 'selected' : ''}>未訪問</option>
+  <option value="訪問済み" ${company.sales_status === '訪問済み' ? 'selected' : ''}>訪問済み</option>
+  <option value="継続フォロー" ${company.sales_status === '継続フォロー' ? 'selected' : ''}>継続フォロー</option>
+  <option value="見積あり" ${company.sales_status === '見積あり' ? 'selected' : ''}>見積あり</option>
+  <option value="受注" ${company.sales_status === '受注' ? 'selected' : ''}>受注</option>
+</select>
 `;
     list.appendChild(div);
   });
@@ -593,6 +601,30 @@ document.getElementById('activityForm').scrollIntoView({
     list.appendChild(div);
   });
 });
+  async function updateSalesStatus(companyId, status) {
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/companies?id=eq.${companyId}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      },
+      body: JSON.stringify({
+        sales_status: status
+      })
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    alert('営業状況の更新に失敗しました\n' + errorText);
+    return;
+  }
+
+  alert('営業状況を更新しました！');
+}
 </script>
 </body>
 </html>
