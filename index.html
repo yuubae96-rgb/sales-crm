@@ -236,9 +236,10 @@ const existingCompanyResponse = await fetch(
 
 const existingCompanies = await existingCompanyResponse.json();
 
+let companyId = null;
+
 if (existingCompanies.length > 0) {
-  alert('この会社はすでに登録されています');
-  return;
+  companyId = existingCompanies[0].id;
 }
   const companyResponse = await fetch(
   `${SUPABASE_URL}/rest/v1/companies`,
