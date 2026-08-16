@@ -130,8 +130,14 @@
     <h2>会社</h2>
     <p>登録されている会社を確認します。</p>
     <button class="secondary" id="companyListButton">会社一覧</button>
-    <button class="secondary" id="unvisitedButton">未訪問だけ表示</button>
-    <button class="secondary" id="visitedButton">訪問済みだけ表示</button>
+    <select id="salesStatusFilter">
+  <option value="すべて">すべて</option>
+  <option value="未訪問">未訪問</option>
+  <option value="訪問済み">訪問済み</option>
+  <option value="継続フォロー">継続フォロー</option>
+  <option value="見積あり">見積あり</option>
+  <option value="受注">受注</option>
+</select>
     <div id="companyList" style="display:none; margin-top:20px;"></div>
   </div>
 
@@ -627,53 +633,26 @@ document.getElementById('activityForm').scrollIntoView({
 
   alert('営業状況を更新しました！');
 }
-  document.getElementById('unvisitedButton').addEventListener('click', async function () {
-  const response = await fetch(
-    `${SUPABASE_URL}/rest/v1/companies?select=id,company_name,address,phone,sales_status&sales_status=eq.${encodeURIComponent('未訪問')}&order=company_name.asc`,
-    {
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`
-      }
-    }
-  );
+ 
 
-  const companies = await response.json();
+  
 
-  const list = document.getElementById('companyList');
-  list.innerHTML = '';
-  list.style.display = 'block';
+  
+  document.getElementById('salesStatusFilter').addEventListener('change', async function () {
+  const status = this.value;
 
-  if (companies.length === 0) {
-    list.innerHTML = '<p>未訪問の会社はありません。</p>';
-    return;
+  let url = `${SUPABASE_URL}/rest/v1/companies?select=id,company_name,address,phone,sales_status&order=company_name.asc`;
+
+  if (status !== 'すべて') {
+    url += `&sales_status=eq.${encodeURIComponent(status)}`;
   }
 
-  companies.forEach(company => {
-    const div = document.createElement('div');
-    div.style.padding = '12px';
-    div.style.borderBottom = '1px solid #ddd';
-
-    div.innerHTML = `
-      <strong>${company.company_name}</strong><br>
-      <span>${company.address || ''}</span><br>
-      <span>${company.phone || ''}</span><br>
-      <span>営業状況：${company.sales_status || ''}</span>
-    `;
-
-    list.appendChild(div);
+  const response = await fetch(url, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`
+    }
   });
-});
-  document.getElementById('visitedButton').addEventListener('click', async function () {
-  const response = await fetch(
-    `${SUPABASE_URL}/rest/v1/companies?select=id,company_name,address,phone,sales_status&sales_status=eq.${encodeURIComponent('訪問済み')}&order=company_name.asc`,
-    {
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`
-      }
-    }
-  );
 
   const companies = await response.json();
 
@@ -682,7 +661,7 @@ document.getElementById('activityForm').scrollIntoView({
   list.style.display = 'block';
 
   if (companies.length === 0) {
-    list.innerHTML = '<p>訪問済みの会社はありません。</p>';
+    list.innerHTML = '<p>該当する会社はありません。</p>';
     return;
   }
 
@@ -695,7 +674,7 @@ document.getElementById('activityForm').scrollIntoView({
       <strong>${company.company_name}</strong><br>
       <span>${company.address || ''}</span><br>
       <span>${company.phone || ''}</span><br>
-      <span>営業状況：${company.sales_status || ''}</span>
+      <span>営業状況：${company.sales_status || '未設定'}</span>
     `;
 
     list.appendChild(div);
