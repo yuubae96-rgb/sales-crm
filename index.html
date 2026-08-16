@@ -472,6 +472,32 @@ async function showContactDetail(contactId) {
     `電話：${contact.phone || ''}\n` +
     `メール：${contact.email || ''}`
   );
+  const activityResponse = await fetch(
+  `${SUPABASE_URL}/rest/v1/activities?contact_id=eq.${contactId}&select=activity_date,activity_type,notes,next_followup_date&order=activity_date.desc`,
+  {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`
+    }
+  }
+);
+
+const activities = await activityResponse.json();
+
+let activityText = '営業活動履歴\n';
+
+if (activities.length === 0) {
+  activityText += 'まだ登録されていません';
+} else {
+  activities.forEach(activity => {
+    activityText +=
+      `\n${activity.activity_date || ''}　${activity.activity_type || ''}\n` +
+      `${activity.notes || ''}\n` +
+      `次回：${activity.next_followup_date || 'なし'}\n`;
+  });
+}
+
+alert(activityText);
  document.getElementById('activityForm').style.display = 'block';
 document.getElementById('activityForm').dataset.contactId = contactId;
 document.getElementById('activityDate').value = new Date().toISOString().split('T')[0];
