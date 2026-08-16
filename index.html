@@ -121,7 +121,7 @@ document.getElementById('cardCamera').addEventListener('change', function () {
 
   reader.onload = async function () {
     const imageBase64 = reader.result;
-
+alert("Supabaseに送信します");
     const response = await fetch(
       `${SUPABASE_URL}/functions/v1/read-business-card`,
       {
