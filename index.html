@@ -145,7 +145,33 @@
     <p>訪問履歴やローラー営業の進捗を管理します。</p>
     <button class="secondary">営業活動を見る</button>
   </div>
+<div id="activityForm" style="display:none; margin-top:20px;">
+  <h3>営業活動を登録</h3>
 
+  <label>活動日</label>
+  <input type="date" id="activityDate">
+
+  <label>活動種類</label>
+  <select id="activityType">
+    <option value="引き合い">引き合い</option>
+    <option value="訪問">訪問</option>
+    <option value="電話">電話</option>
+    <option value="メール">メール</option>
+    <option value="見積提出">見積提出</option>
+    <option value="打ち合わせ">打ち合わせ</option>
+    <option value="受注">受注</option>
+    <option value="失注">失注</option>
+    <option value="その他">その他</option>
+  </select>
+
+  <label>内容</label>
+  <textarea id="activityNotes" rows="4"></textarea>
+
+  <label>次回フォロー日</label>
+  <input type="date" id="nextFollowupDate">
+
+  <button class="primary" id="saveActivityButton">登録する</button>
+</div>
 </main>
 <script>
 const SUPABASE_URL = "https://emauqxftmauvsffdjvyh.supabase.co";
@@ -446,21 +472,31 @@ async function showContactDetail(contactId) {
     `電話：${contact.phone || ''}\n` +
     `メール：${contact.email || ''}`
   );
-  if (confirm('この人物の営業活動を登録しますか？')) {
-  await addActivity(contactId);
+ document.getElementById('activityForm').style.display = 'block';
+document.getElementById('activityForm').dataset.contactId = contactId;
+document.getElementById('activityDate').value = new Date().toISOString().split('T')[0];
+
+document.getElementById('activityForm').scrollIntoView({
+  behavior: 'smooth'
+});
 }
-}
-  async function addActivity(contactId) {
-  const activityDate = prompt('活動日を入力してください（例：2026-08-17）');
-  if (!activityDate) return;
+ 
+  document.getElementById('saveActivityButton').addEventListener('click', async function () {
+  const contactId = document.getElementById('activityForm').dataset.contactId;
+  const activityDate = document.getElementById('activityDate').value;
+  const activityType = document.getElementById('activityType').value;
+  const notes = document.getElementById('activityNotes').value.trim();
+  const nextFollowupDate = document.getElementById('nextFollowupDate').value;
 
-  const activityType = prompt('活動内容の種類を入力してください（例：訪問、電話、メール、見積提出）');
-  if (!activityType) return;
+  if (!contactId) {
+    alert('人物が選択されていません');
+    return;
+  }
 
-  const notes = prompt('内容を入力してください');
-  if (notes === null) return;
-
-  const nextFollowupDate = prompt('次回フォロー日を入力してください（なければ空欄）');
+  if (!activityDate) {
+    alert('活動日を選んでください');
+    return;
+  }
 
   const response = await fetch(
     `${SUPABASE_URL}/rest/v1/activities`,
@@ -472,7 +508,7 @@ async function showContactDetail(contactId) {
         'Authorization': `Bearer ${SUPABASE_KEY}`
       },
       body: JSON.stringify({
-        contact_id: contactId,
+        contact_id: Number(contactId),
         activity_date: activityDate,
         activity_type: activityType,
         notes: notes,
@@ -481,15 +517,18 @@ async function showContactDetail(contactId) {
     }
   );
 
- if (!response.ok) {
-  const errorText = await response.text();
-  alert('登録エラー：' + response.status + '\n' + errorText);
-  return;
-}
-  
+  if (!response.ok) {
+    const errorText = await response.text();
+    alert('登録エラー：' + response.status + '\n' + errorText);
+    return;
+  }
 
   alert('営業活動を登録しました！');
-}
+
+  document.getElementById('activityNotes').value = '';
+  document.getElementById('nextFollowupDate').value = '';
+  document.getElementById('activityForm').style.display = 'none';
+});
 </script>
 </body>
 </html>
