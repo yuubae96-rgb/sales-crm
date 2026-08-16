@@ -345,6 +345,40 @@ alert('登録できました！');
     list.appendChild(div);
   });
 });
+async function showCompanyContacts(companyId, companyName) {
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/contacts?company_id=eq.${companyId}&select=name,department,position,phone,email`,
+    {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      }
+    }
+  );
+
+  const contacts = await response.json();
+
+  const list = document.getElementById('companyList');
+
+  let html = `<h3>${companyName}</h3>`;
+
+  if (contacts.length === 0) {
+    html += `<p>登録されている人物はいません。</p>`;
+  } else {
+    contacts.forEach(contact => {
+      html += `
+        <div style="padding:12px; border-bottom:1px solid #ddd;">
+          <strong>${contact.name}</strong><br>
+          <span>${contact.department || ''} ${contact.position || ''}</span><br>
+          <span>${contact.phone || ''}</span><br>
+          <span>${contact.email || ''}</span>
+        </div>
+      `;
+    });
+  }
+
+  list.innerHTML = html;
+}
 </script>
 
 </body>
