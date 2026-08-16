@@ -481,9 +481,11 @@ async function showContactDetail(contactId) {
     }
   );
 
-  if (!response.ok) {
-    alert('営業活動の登録に失敗しました');
-    return;
+ if (!response.ok) {
+  const errorText = await response.text();
+  alert('登録エラー：' + response.status + '\n' + errorText);
+  return;
+}
   }
 
   alert('営業活動を登録しました！');
