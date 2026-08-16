@@ -133,7 +133,7 @@
     <button class="secondary" id="unvisitedButton">未訪問だけ表示</button>
     <div id="companyList" style="display:none; margin-top:20px;"></div>
   </div>
-
+<button class="secondary" id="visitedButton">訪問済みだけ表示</button>
   <div class="card">
     <h2>人物</h2>
     <p>名刺交換した担当者を確認します。</p>
@@ -645,6 +645,43 @@ document.getElementById('activityForm').scrollIntoView({
 
   if (companies.length === 0) {
     list.innerHTML = '<p>未訪問の会社はありません。</p>';
+    return;
+  }
+
+  companies.forEach(company => {
+    const div = document.createElement('div');
+    div.style.padding = '12px';
+    div.style.borderBottom = '1px solid #ddd';
+
+    div.innerHTML = `
+      <strong>${company.company_name}</strong><br>
+      <span>${company.address || ''}</span><br>
+      <span>${company.phone || ''}</span><br>
+      <span>営業状況：${company.sales_status || ''}</span>
+    `;
+
+    list.appendChild(div);
+  });
+});
+  document.getElementById('visitedButton').addEventListener('click', async function () {
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/companies?select=id,company_name,address,phone,sales_status&sales_status=eq.${encodeURIComponent('訪問済み')}&order=company_name.asc`,
+    {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      }
+    }
+  );
+
+  const companies = await response.json();
+
+  const list = document.getElementById('companyList');
+  list.innerHTML = '';
+  list.style.display = 'block';
+
+  if (companies.length === 0) {
+    list.innerHTML = '<p>訪問済みの会社はありません。</p>';
     return;
   }
 
