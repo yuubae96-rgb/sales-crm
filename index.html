@@ -140,9 +140,9 @@ alert("Supabaseに送信します");
     );
 
     const data = await response.json();
-alert(JSON.stringify(data));
+const text = data.output?.[0]?.content?.[0]?.text || '読み取り結果がありません';
+alert(text);
     console.log(data);
-    alert(JSON.stringify(data));
   };
 
   reader.readAsDataURL(file);
