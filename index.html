@@ -335,11 +335,13 @@ alert('登録できました！');
     const div = document.createElement('div');
     div.style.padding = '12px';
     div.style.borderBottom = '1px solid #ddd';
-    div.innerHTML = `
-      <strong>${company.company_name}</strong><br>
-      <span>${company.address || ''}</span><br>
-      <span>${company.phone || ''}</span>
-    `;
+   div.innerHTML = `
+  <strong style="cursor:pointer;" onclick="showCompanyContacts(${company.id}, '${company.company_name.replace(/'/g, "\\'")}')">
+    ${company.company_name}
+  </strong><br>
+  <span>${company.address || ''}</span><br>
+  <span>${company.phone || ''}</span>
+`;
     list.appendChild(div);
   });
 });
