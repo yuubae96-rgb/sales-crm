@@ -71,7 +71,8 @@
   <div class="card">
     <h2>名刺登録</h2>
     <p>名刺を撮影して、会社・人物情報を登録します。</p>
-    <button class="primary">名刺を撮影</button>
+    <input type="file" id="cardCamera" accept="image/*" capture="environment" style="display:none;">
+<button class="primary" onclick="document.getElementById('cardCamera').click()">名刺を撮影</button>
   </div>
 
   <div class="card">
