@@ -267,7 +267,7 @@ if (!companyResponse.ok) {
   return;
 }
 
-const companyId = companyData[0].id;
+companyId = companyData[0].id;
 
 const contactResponse = await fetch(
   `${SUPABASE_URL}/rest/v1/contacts`,
