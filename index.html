@@ -212,7 +212,22 @@ console.log(data);
   reader.readAsDataURL(file);
 }); 
   document.getElementById('saveCardButton').addEventListener('click', async function () {
-  alert('登録ボタンが動きました');
+  const companyName = document.getElementById('companyName').value.trim();
+  const personName = document.getElementById('personName').value.trim();
+  const department = document.getElementById('department').value.trim();
+  const position = document.getElementById('position').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const address = document.getElementById('address').value.trim();
+
+  if (!companyName || !personName) {
+    alert('会社名と氏名は入力してください');
+    return;
+  }
+
+  alert('保存処理を始めます');
+});
+</script>
 });
 </script>
 
