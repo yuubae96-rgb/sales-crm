@@ -75,6 +75,32 @@
 <button class="primary" onclick="document.getElementById('cardCamera').click()">名刺を撮影</button>
 <img id="cardPreview" style="display:none; width:100%; margin-top:15px; border-radius:12px;">
  <button class="primary" id="readCardButton">名刺を読み取る</button>
+    <div id="cardResult" style="display:none; margin-top:20px;">
+  <h3>読み取り結果</h3>
+
+  <label>会社名</label>
+  <input type="text" id="companyName">
+
+  <label>氏名</label>
+  <input type="text" id="personName">
+
+  <label>部署</label>
+  <input type="text" id="department">
+
+  <label>役職</label>
+  <input type="text" id="position">
+
+  <label>電話番号</label>
+  <input type="text" id="phone">
+
+  <label>メールアドレス</label>
+  <input type="text" id="email">
+
+  <label>住所</label>
+  <input type="text" id="address">
+
+  <button class="primary" id="saveCardButton">登録する</button>
+</div>
   </div>
 
   <div class="card">
