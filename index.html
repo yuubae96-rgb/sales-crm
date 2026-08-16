@@ -350,7 +350,7 @@ alert('登録できました！');
 });
 async function showCompanyContacts(companyId, companyName) {
   const response = await fetch(
-    `${SUPABASE_URL}/rest/v1/contacts?company_id=eq.${companyId}&select=name,department,position,phone,email`,
+    `${SUPABASE_URL}/rest/v1/contacts?company_id=eq.${companyId}&select=id,name,department,position,phone,email`,
     {
       headers: {
         'apikey': SUPABASE_KEY,
@@ -369,17 +369,15 @@ async function showCompanyContacts(companyId, companyName) {
     html += `<p>登録されている人物はいません。</p>`;
   } else {
     contacts.forEach(contact => {
-      div.innerHTML = `
-  <strong
-    style="cursor:pointer;"
-    onclick="showContactDetail(${contact.id})"
-  >
-    ${contact.name}
-  </strong><br>
-  <span>${contact.department || ''} ${contact.position || ''}</span><br>
-  <span>${contact.phone || ''}</span><br>
-  <span>${contact.email || ''}</span>
-`;
+      html += `
+        <div style="padding:12px; border-bottom:1px solid #ddd;">
+          <strong style="cursor:pointer;" onclick="showContactDetail(${contact.id})">
+            ${contact.name}
+          </strong><br>
+          <span>${contact.department || ''} ${contact.position || ''}</span><br>
+          <span>${contact.phone || ''}</span><br>
+          <span>${contact.email || ''}</span>
+        </div>
       `;
     });
   }
@@ -407,14 +405,19 @@ document.getElementById('contactListButton').addEventListener('click', async fun
     const div = document.createElement('div');
     div.style.padding = '12px';
     div.style.borderBottom = '1px solid #ddd';
+
     div.innerHTML = `
-      <strong>${contact.name}</strong><br>
+      <strong style="cursor:pointer;" onclick="showContactDetail(${contact.id})">
+        ${contact.name}
+      </strong><br>
       <span>${contact.department || ''} ${contact.position || ''}</span><br>
       <span>${contact.phone || ''}</span><br>
       <span>${contact.email || ''}</span>
     `;
+
     list.appendChild(div);
   });
+});
 });
 async function showContactDetail(contactId) {
   const response = await fetch(
