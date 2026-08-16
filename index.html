@@ -225,7 +225,60 @@ console.log(data);
     return;
   }
 
-  alert('保存処理を始めます');
+  const companyResponse = await fetch(
+  `${SUPABASE_URL}/rest/v1/companies`,
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify({
+      company_name: companyName,
+      address: address,
+      phone: phone
+    })
+  }
+);
+
+const companyData = await companyResponse.json();
+
+if (!companyResponse.ok) {
+  alert('会社の登録に失敗しました');
+  console.log(companyData);
+  return;
+}
+
+const companyId = companyData[0].id;
+
+const contactResponse = await fetch(
+  `${SUPABASE_URL}/rest/v1/contacts`,
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`
+    },
+    body: JSON.stringify({
+      company_id: companyId,
+      name: personName,
+      department: department,
+      position: position,
+      phone: phone,
+      email: email
+    })
+  }
+);
+
+if (!contactResponse.ok) {
+  alert('人物の登録に失敗しました');
+  return;
+}
+
+alert('登録できました！');
 });
 </script>
 });
