@@ -108,7 +108,7 @@ document.getElementById('cardCamera').addEventListener('change', function () {
   alert("読み取り機能の準備OK");
  document.getElementById('readCardButton').addEventListener('click', async function () {
    alert("読み取りボタン押した！");
-  const fileInput = document.getElementById('cardCamera');
+  const fileInput = document.getElementById('readCardButton');
   const file = fileInput.files[0];
 
   if (!file) {
