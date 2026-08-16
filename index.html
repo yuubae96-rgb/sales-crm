@@ -346,7 +346,7 @@ alert('登録できました！');
   document.getElementById('companyListButton').addEventListener('click', async function () {
     alert("会社一覧ボタン押した！");
   const response = await fetch(
-    `${SUPABASE_URL}/rest/v1/companies?select=id,company_name,address,phone&order=company_name.asc`,
+    `${SUPABASE_URL}/rest/v1/companies?select=id,company_name,address,phone,sales_status`,
     {
       headers: {
         'apikey': SUPABASE_KEY,
@@ -371,6 +371,7 @@ alert('登録できました！');
   </strong><br>
   <span>${company.address || ''}</span><br>
   <span>${company.phone || ''}</span>
+  <br><span>営業状況：${company.sales_status || '未設定'}</span>
 `;
     list.appendChild(div);
   });
