@@ -166,9 +166,24 @@ alert("Supabaseに送信します");
     );
 
     const data = await response.json();
-const text = data.output?.[0]?.content?.[0]?.text || '読み取り結果がありません';
-alert(text);
-    console.log(data);
+const text = data.output?.[0]?.content?.[0]?.text || '';
+
+document.getElementById('cardResult').style.display = 'block';
+
+const getValue = (label) => {
+  const match = text.match(new RegExp(label + '\\s*[：:]\\s*([^\\n]+)'));
+  return match ? match[1].trim() : '';
+};
+
+document.getElementById('companyName').value = getValue('会社名');
+document.getElementById('personName').value = getValue('氏名');
+document.getElementById('department').value = getValue('部署');
+document.getElementById('position').value = getValue('役職');
+document.getElementById('phone').value = getValue('電話番号');
+document.getElementById('email').value = getValue('メールアドレス');
+document.getElementById('address').value = getValue('住所');
+
+console.log(data);
   };
 
   reader.readAsDataURL(file);
