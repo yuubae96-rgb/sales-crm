@@ -1,0 +1,38 @@
+name: Fix company list pagination
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-company-pagination.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch company pagination
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old="async function get(path){let r=await fetch(U+path,{headers:H}),t=await r.text(),d;try{d=JSON.parse(t)}catch{throw Error(`データ取得エラー (${r.status})`)}if(!r.ok)throw Error(d?.message||`データ取得エラー (${r.status})`);return d}"
+          new=old+"\nasync function getAll(path,pageSize=100){let all=[],offset=0;while(true){const sep=path.includes('?')?'&':'?';const page=await get(`${path}${sep}limit=${pageSize}&offset=${offset}`);all.push(...page);if(page.length<pageSize)break;offset+=pageSize;if(offset>5000)throw Error('会社一覧の取得件数が多すぎます')}return all}"
+          if old not in s:
+              raise SystemExit('get function not found')
+          s=s.replace(old,new,1)
+          old2="let a=await get(url);if(rg!=='すべて')a=a.filter(c=>regionOfAddress(c.address)===rg);"
+          new2="let a=await getAll(url);if(rg!=='すべて')a=a.filter(c=>regionOfAddress(c.address)===rg);"
+          if old2 not in s:
+              raise SystemExit('load company fetch not found')
+          s=s.replace(old2,new2,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Fetch all companies when filtering by region"
+          git push
