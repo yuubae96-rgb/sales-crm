@@ -1,0 +1,49 @@
+name: Robust back to filtered company list
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-back-to-filtered-list-v2.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch filtered-list back behavior
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+
+          old="let companyListScrollY=0;\nif(!history.state)history.replaceState({view:'home'},'',location.pathname+location.search);"
+          new="let companyListScrollY=0,detailOpen=false;\nconst LIST_CTX_KEY='salesCrmCompanyListContext';\nfunction saveListContext(){const ctx={relationship:$('relationshipFilter')?.value||'すべて',salesStatus:$('salesStatusFilter')?.value||'すべて',region:$('regionFilter')?.value||'すべて',scrollY:window.scrollY};sessionStorage.setItem(LIST_CTX_KEY,JSON.stringify(ctx));return ctx}\nfunction readListContext(){try{return JSON.parse(sessionStorage.getItem(LIST_CTX_KEY)||'null')}catch{return null}}\nfunction restoreListContext(ctx){if(!ctx)return;$('relationshipFilter').value=ctx.relationship||'すべて';$('salesStatusFilter').value=ctx.salesStatus||'すべて';$('regionFilter').value=ctx.region||'すべて'}\nif(!history.state)history.replaceState({view:'home'},'',location.pathname+location.search);"
+          if old not in s: raise SystemExit('state marker not found')
+          s=s.replace(old,new,1)
+
+          old="const listState={view:'companies',filters:{relationship:ty,salesStatus:st,region:rg},scrollY:window.scrollY};if(pushState)history.pushState(listState,'','#companies');else if(history.state?.view==='companies')history.replaceState(listState,'','#companies');"
+          new="const ctx=saveListContext();const listState={view:'companies',filters:{relationship:ctx.relationship,salesStatus:ctx.salesStatus,region:ctx.region},scrollY:ctx.scrollY};if(pushState)history.pushState(listState,'','#companies');else if(history.state?.view==='companies')history.replaceState(listState,'','#companies');"
+          if old not in s: raise SystemExit('list state block not found')
+          s=s.replace(old,new,1)
+
+          old="async function showCompany(id,pushState=true){if(pushState){companyListScrollY=window.scrollY;const prev={view:'companies',filters:{relationship:$('relationshipFilter').value,salesStatus:$('salesStatusFilter').value,region:$('regionFilter').value},scrollY:companyListScrollY};history.replaceState(prev,'','#companies');history.pushState({view:'company',id:String(id)},'',`#company-${id}`)}"
+          new="async function showCompany(id,pushState=true){if(pushState){companyListScrollY=window.scrollY;const ctx=saveListContext();const prev={view:'companies',filters:{relationship:ctx.relationship,salesStatus:ctx.salesStatus,region:ctx.region},scrollY:ctx.scrollY};history.replaceState(prev,'','#companies');history.pushState({view:'company',id:String(id)},'',`#company-${id}`);detailOpen=true}"
+          if old not in s: raise SystemExit('showCompany block not found')
+          s=s.replace(old,new,1)
+
+          old="window.addEventListener('popstate',async e=>{const s=e.state||{};if(s.view==='companies'){if(s.filters){$('relationshipFilter').value=s.filters.relationship||'すべて';$('salesStatusFilter').value=s.filters.salesStatus||'すべて';$('regionFilter').value=s.filters.region||'すべて'}await loadCompanies(false);const y=Number.isFinite(s.scrollY)?s.scrollY:(companyListScrollY||0);setTimeout(()=>window.scrollTo(0,y),0)}else if(s.view==='company'&&s.id){await showCompany(s.id,false)}else{$('companyList').classList.add('hidden');$('companyProfile').classList.add('hidden')}});"
+          new="window.addEventListener('popstate',async e=>{const hs=e.state||{},saved=readListContext();if(detailOpen){detailOpen=false;restoreListContext(saved);if(hs.view!=='companies')history.replaceState({view:'companies',filters:saved?{relationship:saved.relationship,salesStatus:saved.salesStatus,region:saved.region}:null,scrollY:saved?.scrollY||0},'','#companies');await loadCompanies(false);const y=saved&&Number.isFinite(saved.scrollY)?saved.scrollY:(companyListScrollY||0);setTimeout(()=>window.scrollTo(0,y),0);return}if(hs.view==='companies'){const ctx=hs.filters?{relationship:hs.filters.relationship,salesStatus:hs.filters.salesStatus,region:hs.filters.region,scrollY:hs.scrollY}:saved;restoreListContext(ctx);await loadCompanies(false);const y=ctx&&Number.isFinite(ctx.scrollY)?ctx.scrollY:(companyListScrollY||0);setTimeout(()=>window.scrollTo(0,y),0)}else if(hs.view==='company'&&hs.id){detailOpen=true;await showCompany(hs.id,false)}else{$('companyList').classList.add('hidden');$('companyProfile').classList.add('hidden')}});"
+          if old not in s: raise SystemExit('popstate block not found')
+          s=s.replace(old,new,1)
+
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Keep filtered company list when navigating back"
+          git push
