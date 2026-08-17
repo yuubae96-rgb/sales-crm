@@ -82,6 +82,25 @@
     .hidden { display: none; }
     .section-gap { margin-top: 18px; padding-top: 16px; border-top: 1px solid #ddd; }
     a { color: inherit; }
+
+    .batch-card {
+      border: 1px solid #ddd;
+      border-radius: 14px;
+      padding: 14px;
+      margin-top: 14px;
+      background: #fafafa;
+    }
+    .batch-card h4 {
+      margin: 0 0 8px 0;
+      font-size: 17px;
+    }
+    .batch-card .remove-card {
+      width: auto;
+      padding: 8px 12px;
+      font-size: 14px;
+      background: #eee;
+      color: #333;
+    }
   </style>
 </head>
 <body>
@@ -97,16 +116,12 @@
     <button class="primary" id="readCardButton">名刺を読み取る</button>
 
     <div id="cardResult" class="hidden section-gap">
-      <h3>読み取り結果</h3>
-      <label>会社名</label><input type="text" id="companyName">
-      <label>氏名</label><input type="text" id="personName">
-      <label>部署</label><input type="text" id="department">
-      <label>役職</label><input type="text" id="position">
-      <label>電話番号</label><input type="text" id="phone">
-      <label>メールアドレス</label><input type="text" id="email">
-      <label>住所</label><input type="text" id="address">
-      <button class="primary" id="saveCardButton">登録する</button>
+      <h3 id="cardResultTitle">読み取り結果</h3>
+      <p class="muted">複数枚写っている場合は、名刺ごとに分けて表示します。内容を確認してからまとめて登録できます。</p>
+      <div id="batchCardList"></div>
+      <button class="primary" id="saveAllCardsButton">まとめて登録する</button>
     </div>
+
   </div>
 
   <div class="card">
@@ -208,12 +223,87 @@ document.getElementById('cardCamera').addEventListener('change', function () {
   preview.classList.remove('hidden');
 });
 
+let currentCards = [];
+
+function renderBatchCards(cards) {
+  const container = document.getElementById('batchCardList');
+  container.innerHTML = '';
+
+  currentCards = cards.map((card, index) => ({
+    company_name: card.company_name || '',
+    person_name: card.person_name || '',
+    department: card.department || '',
+    position: card.position || '',
+    phone: card.phone || '',
+    email: card.email || '',
+    address: card.address || '',
+    _index: index
+  }));
+
+  document.getElementById('cardResultTitle').textContent =
+    `${currentCards.length}枚の名刺を読み取りました`;
+
+  currentCards.forEach((card, index) => {
+    const block = document.createElement('div');
+    block.className = 'batch-card';
+    block.dataset.index = index;
+    block.innerHTML = `
+      <h4>名刺 ${index + 1}</h4>
+      <label>会社名</label>
+      <input type="text" data-field="company_name" value="${escapeHtml(card.company_name)}">
+
+      <label>氏名</label>
+      <input type="text" data-field="person_name" value="${escapeHtml(card.person_name)}">
+
+      <label>部署</label>
+      <input type="text" data-field="department" value="${escapeHtml(card.department)}">
+
+      <label>役職</label>
+      <input type="text" data-field="position" value="${escapeHtml(card.position)}">
+
+      <label>電話番号</label>
+      <input type="text" data-field="phone" value="${escapeHtml(card.phone)}">
+
+      <label>メールアドレス</label>
+      <input type="text" data-field="email" value="${escapeHtml(card.email)}">
+
+      <label>住所</label>
+      <input type="text" data-field="address" value="${escapeHtml(card.address)}">
+
+      <button type="button" class="remove-card">この名刺を除外</button>
+    `;
+
+    block.querySelectorAll('input[data-field]').forEach(input => {
+      input.addEventListener('input', () => {
+        currentCards[index][input.dataset.field] = input.value;
+      });
+    });
+
+    block.querySelector('.remove-card').addEventListener('click', () => {
+      currentCards[index]._removed = true;
+      block.remove();
+
+      const remaining = currentCards.filter(c => !c._removed).length;
+      document.getElementById('cardResultTitle').textContent =
+        `${remaining}枚の名刺を登録対象にしています`;
+    });
+
+    container.appendChild(block);
+  });
+
+  document.getElementById('cardResult').classList.remove('hidden');
+}
+
 document.getElementById('readCardButton').addEventListener('click', async function () {
   const file = document.getElementById('cardCamera').files[0];
   if (!file) {
     alert('先に名刺を撮影してください');
     return;
   }
+
+  this.disabled = true;
+  const originalText = this.textContent;
+  this.textContent = 'AIで読み取り中…';
 
   const reader = new FileReader();
   reader.onload = async function () {
@@ -230,120 +320,176 @@ document.getElementById('readCardButton').addEventListener('click', async functi
       const data = await response.json();
       if (!response.ok) throw new Error(data?.error || '名刺読み取りに失敗しました');
 
-      const text = data.output?.[0]?.content?.find?.(x => x.type === 'output_text')?.text
-        || data.output?.[0]?.content?.[0]?.text
-        || '';
+      const cards = Array.isArray(data.cards) ? data.cards : [];
+      if (!cards.length) {
+        throw new Error('名刺を認識できませんでした。名刺を大きく、重ならないように撮影してください。');
+      }
 
-      const getValue = (label) => {
-        const match = text.match(new RegExp(label + '\\s*[：:]\\s*([^\\n]+)'));
-        return match ? match[1].trim().replace(/^[-・]\s*/, '') : '';
-      };
-
-      document.getElementById('companyName').value = getValue('会社名');
-      document.getElementById('personName').value = getValue('氏名');
-      document.getElementById('department').value = getValue('部署').replace('記載なし','');
-      document.getElementById('position').value = getValue('役職').replace('記載なし','');
-      document.getElementById('phone').value = getValue('電話番号');
-      document.getElementById('email').value = getValue('メールアドレス');
-      document.getElementById('address').value = getValue('住所');
-
-      document.getElementById('cardResult').classList.remove('hidden');
+      renderBatchCards(cards);
     } catch (e) {
       alert('読み取りエラー：' + e.message);
+    } finally {
+      const btn = document.getElementById('readCardButton');
+      btn.disabled = false;
+      btn.textContent = originalText;
     }
   };
   reader.readAsDataURL(file);
 });
 
-document.getElementById('saveCardButton').addEventListener('click', async function () {
-  const companyName = document.getElementById('companyName').value.trim();
-  const personName = document.getElementById('personName').value.trim();
-  const department = document.getElementById('department').value.trim();
-  const position = document.getElementById('position').value.trim();
-  const phone = document.getElementById('phone').value.trim();
-  const email = document.getElementById('email').value.trim();
-  const address = document.getElementById('address').value.trim();
+async function getOrCreateCompany(card, companyCache) {
+  const companyName = (card.company_name || '').trim();
+  if (!companyName) {
+    throw new Error('会社名が空欄の名刺があります');
+  }
 
-  if (!companyName || !personName) {
-    alert('会社名と氏名は入力してください');
+  const normalizedName = normalizeText(companyName);
+  if (companyCache.has(normalizedName)) {
+    return companyCache.get(normalizedName);
+  }
+
+  const companiesResp = await fetch(
+    `${SUPABASE_URL}/rest/v1/companies?select=id,company_name,address`,
+    { headers: apiHeaders }
+  );
+  const companies = await companiesResp.json();
+
+  const existingCompany = companies.find(c =>
+    normalizeText(c.company_name) === normalizedName
+  );
+
+  if (existingCompany) {
+    companyCache.set(normalizedName, existingCompany.id);
+    return existingCompany.id;
+  }
+
+  const companyResp = await fetch(`${SUPABASE_URL}/rest/v1/companies`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...apiHeaders,
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify({
+      company_name: companyName,
+      address: (card.address || '').trim(),
+      phone: (card.phone || '').trim(),
+      ai_review_status: '未調査'
+    })
+  });
+
+  const companyData = await companyResp.json();
+  if (!companyResp.ok) {
+    throw new Error(`会社「${companyName}」の登録に失敗しました`);
+  }
+
+  const companyId = companyData[0].id;
+  companyCache.set(normalizedName, companyId);
+  return companyId;
+}
+
+async function registerOneCard(card, companyCache) {
+  const personName = (card.person_name || '').trim();
+  if (!personName) {
+    throw new Error(`「${card.company_name || '会社名不明'}」の氏名が空欄です`);
+  }
+
+  const companyId = await getOrCreateCompany(card, companyCache);
+
+  const contactsResp = await fetch(
+    `${SUPABASE_URL}/rest/v1/contacts?company_id=eq.${companyId}&select=id,name`,
+    { headers: apiHeaders }
+  );
+  const contacts = await contactsResp.json();
+
+  const duplicate = contacts.find(c =>
+    normalizeText(c.name) === normalizeText(personName)
+  );
+
+  if (duplicate) {
+    return {
+      result: 'duplicate',
+      company_name: card.company_name,
+      person_name: personName
+    };
+  }
+
+  const contactResp = await fetch(`${SUPABASE_URL}/rest/v1/contacts`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...apiHeaders
+    },
+    body: JSON.stringify({
+      company_id: companyId,
+      name: personName,
+      department: (card.department || '').trim(),
+      position: (card.position || '').trim(),
+      phone: (card.phone || '').trim(),
+      email: (card.email || '').trim()
+    })
+  });
+
+  if (!contactResp.ok) {
+    throw new Error(`「${personName}」の人物登録に失敗しました`);
+  }
+
+  return {
+    result: 'registered',
+    company_name: card.company_name,
+    person_name: personName
+  };
+}
+
+document.getElementById('saveAllCardsButton').addEventListener('click', async function () {
+  const cards = currentCards.filter(c => !c._removed);
+
+  if (!cards.length) {
+    alert('登録する名刺がありません');
     return;
   }
 
-  try {
-    const companiesResp = await fetch(
-      `${SUPABASE_URL}/rest/v1/companies?select=id,company_name,address`,
-      { headers: apiHeaders }
-    );
-    const companies = await companiesResp.json();
-    const existingCompany = companies.find(c =>
-      normalizeText(c.company_name) === normalizeText(companyName)
-    );
+  const invalid = cards.find(c => !(c.company_name || '').trim() || !(c.person_name || '').trim());
+  if (invalid) {
+    alert('会社名または氏名が空欄の名刺があります。確認してください。');
+    return;
+  }
 
-    let companyId;
+  this.disabled = true;
+  const originalText = this.textContent;
+  this.textContent = `${cards.length}枚を登録中…`;
 
-    if (existingCompany) {
-      companyId = existingCompany.id;
-    } else {
-      const companyResp = await fetch(`${SUPABASE_URL}/rest/v1/companies`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...apiHeaders,
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify({
-          company_name: companyName,
-          address,
-          phone,
-          ai_review_status: '未調査'
-        })
-      });
-      const companyData = await companyResp.json();
-      if (!companyResp.ok) throw new Error('会社の登録に失敗しました');
-      companyId = companyData[0].id;
+  const companyCache = new Map();
+  const results = [];
+  const errors = [];
+
+  for (const card of cards) {
+    try {
+      const result = await registerOneCard(card, companyCache);
+      results.push(result);
+    } catch (e) {
+      errors.push(e.message);
     }
+  }
 
-    const contactsResp = await fetch(
-      `${SUPABASE_URL}/rest/v1/contacts?company_id=eq.${companyId}&select=id,name`,
-      { headers: apiHeaders }
-    );
-    const contacts = await contactsResp.json();
+  const registeredCount = results.filter(r => r.result === 'registered').length;
+  const duplicateCount = results.filter(r => r.result === 'duplicate').length;
 
-    const duplicate = contacts.find(c =>
-      normalizeText(c.name) === normalizeText(personName)
-    );
-    if (duplicate) {
-      alert('この人物はすでに登録されています');
-      return;
-    }
+  let message = `${registeredCount}件を登録しました。`;
+  if (duplicateCount) message += `\n${duplicateCount}件は既存人物のため重複登録しませんでした。`;
+  if (errors.length) message += `\n\nエラー:\n${errors.join('\n')}`;
 
-    const contactResp = await fetch(`${SUPABASE_URL}/rest/v1/contacts`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...apiHeaders
-      },
-      body: JSON.stringify({
-        company_id: companyId,
-        name: personName,
-        department,
-        position,
-        phone,
-        email
-      })
-    });
+  alert(message);
 
-    if (!contactResp.ok) throw new Error('人物の登録に失敗しました');
+  this.disabled = false;
+  this.textContent = originalText;
 
-    alert(existingCompany
-      ? '人物を登録しました！'
-      : '登録できました！会社情報はAIが自動調査します。');
-
+  if (!errors.length) {
+    currentCards = [];
+    document.getElementById('batchCardList').innerHTML = '';
     document.getElementById('cardResult').classList.add('hidden');
     document.getElementById('cardPreview').classList.add('hidden');
     document.getElementById('cardCamera').value = '';
-  } catch (e) {
-    alert(e.message);
   }
 });
 
