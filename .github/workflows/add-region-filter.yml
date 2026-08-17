@@ -1,0 +1,44 @@
+name: Add customer region filter
+on:
+  push:
+    paths:
+      - '.github/workflows/add-region-filter.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch region filter
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+
+          old='<div class="card"><h2>会社・取引先</h2><button class="secondary" id="companyListButton">会社一覧</button><div class="filters"><div><label>取引先区分（顧客、材料、外注、設備、その他）</label><select id="relationshipFilter"><option>すべて</option><option>顧客</option><option>材料メーカー</option><option>外注先</option><option>設備会社</option><option>その他</option></select></div><div><label>営業状況（顧客のみ）</label><select id="salesStatusFilter"><option>すべて</option><option>未訪問</option><option>訪問済み</option><option>継続フォロー</option><option>見積あり</option><option>受注</option></select></div></div><div id="companyList" class="hidden section-gap"></div><div id="companyProfile" class="hidden section-gap"></div></div>'
+          new='<div class="card"><h2>会社・取引先</h2><button class="secondary" id="companyListButton">会社一覧</button><div class="filters"><div><label>取引先区分（顧客、材料、外注、設備、その他）</label><select id="relationshipFilter"><option>すべて</option><option>顧客</option><option>材料メーカー</option><option>外注先</option><option>設備会社</option><option>その他</option></select></div><div><label>営業状況（顧客のみ）</label><select id="salesStatusFilter"><option>すべて</option><option>未訪問</option><option>訪問済み</option><option>継続フォロー</option><option>見積あり</option><option>受注</option></select></div><div><label>地域（顧客のみ）</label><select id="regionFilter"><option>すべて</option><option>北部九州</option><option>南部九州</option><option>佐賀県</option><option>長崎県</option><option>熊本県</option><option>大分県</option><option>宮崎県</option><option>鹿児島県</option><option>山口県</option><option>その他</option></select></div></div><div id="companyList" class="hidden section-gap"></div><div id="companyProfile" class="hidden section-gap"></div></div>'
+          if old not in s:
+              raise SystemExit('filters block not found')
+          s=s.replace(old,new,1)
+
+          marker="function bestSimilarCompany(name,companies){let best=null,score=0;for(const c of companies){const s=similarity(name,c.company_name);if(s>score){score=s;best=c}}return score>=0.72?{company:best,score}:null}\n"
+          helper="""function bestSimilarCompany(name,companies){let best=null,score=0;for(const c of companies){const s=similarity(name,c.company_name);if(s>score){score=s;best=c}}return score>=0.72?{company:best,score}:null}\nconst NORTH_FUKUOKA=['北九州市','中間市','水巻町','遠賀町','岡垣町','芦屋町','直方市','宮若市','鞍手町','小竹町','飯塚市','嘉麻市','桂川町','田川市','香春町','添田町','糸田町','川崎町','大任町','赤村','福智町','行橋市','豊前市','苅田町','みやこ町','築上町','吉富町','上毛町','宗像市','福津市','古賀市','新宮町'];\nfunction regionOfAddress(address){const a=String(address||'').normalize('NFKC');if(!a)return 'その他';if(a.includes('福岡県')||NORTH_FUKUOKA.some(x=>a.includes(x))){return NORTH_FUKUOKA.some(x=>a.includes(x))?'北部九州':'南部九州'}const m=a.match(/(北海道|東京都|京都府|大阪府|.{2,3}県)/);return m?m[1]:'その他'}\n"""
+          if marker not in s:
+              raise SystemExit('helper insertion point not found')
+          s=s.replace(marker,helper,1)
+
+          old_load="async function loadCompanies(pushState=true){try{let ty=$('relationshipFilter').value,st=$('salesStatusFilter').value,url='/rest/v1/companies?select=id,company_name,short_description,address,phone,sales_status,ai_review_status,relationship_type&order=company_name.asc';if(ty!=='すべて')url+=`&relationship_type=eq.${encodeURIComponent(ty)}`;if(st!=='すべて')url+=`&relationship_type=eq.${encodeURIComponent('顧客')}&sales_status=eq.${encodeURIComponent(st)}`;let a=await get(url);$('companyList').innerHTML=a.map(c=>`<div class=\"row\"><strong class=\"clickable\" data-company=\"${c.id}\">${esc(c.company_name)}</strong><div class=\"company-summary\">${esc(c.short_description||'AI調査中…')}</div><span class=\"badge ${esc(c.relationship_type||'その他')}\">${esc(c.relationship_type||'その他')}</span><span class=\"status\">${esc(c.ai_review_status||'未調査')}</span><br>${esc(c.address||'')}<br>${esc(c.phone||'')}</div>`).join('');$('companyList').classList.remove('hidden');$('companyProfile').classList.add('hidden');if(pushState)history.pushState({view:'companies'},'','#companies');document.querySelectorAll('[data-company]').forEach(e=>e.onclick=()=>showCompany(e.dataset.company,true))}catch(e){alert('会社一覧エラー：'+e.message)}}$('companyListButton').onclick=()=>loadCompanies(true);$('relationshipFilter').onchange=()=>loadCompanies(false);$('salesStatusFilter').onchange=()=>loadCompanies(false);"
+          new_load="async function loadCompanies(pushState=true){try{let ty=$('relationshipFilter').value,st=$('salesStatusFilter').value,rg=$('regionFilter').value,url='/rest/v1/companies?select=id,company_name,short_description,address,phone,sales_status,ai_review_status,relationship_type&order=company_name.asc';if(rg!=='すべて')url+=`&relationship_type=eq.${encodeURIComponent('顧客')}`;else if(ty!=='すべて')url+=`&relationship_type=eq.${encodeURIComponent(ty)}`;if(st!=='すべて')url+=`&relationship_type=eq.${encodeURIComponent('顧客')}&sales_status=eq.${encodeURIComponent(st)}`;let a=await get(url);if(rg!=='すべて')a=a.filter(c=>regionOfAddress(c.address)===rg);$('companyList').innerHTML=a.map(c=>`<div class=\"row\"><strong class=\"clickable\" data-company=\"${c.id}\">${esc(c.company_name)}</strong><div class=\"company-summary\">${esc(c.short_description||'AI調査中…')}</div><span class=\"badge ${esc(c.relationship_type||'その他')}\">${esc(c.relationship_type||'その他')}</span><span class=\"status\">${esc(c.ai_review_status||'未調査')}</span><br>${esc(c.address||'')}<br>${esc(c.phone||'')}</div>`).join('')||'<p class=\"muted\">この地域の顧客は登録されていません。</p>';$('companyList').classList.remove('hidden');$('companyProfile').classList.add('hidden');if(pushState)history.pushState({view:'companies'},'','#companies');document.querySelectorAll('[data-company]').forEach(e=>e.onclick=()=>showCompany(e.dataset.company,true))}catch(e){alert('会社一覧エラー：'+e.message)}}$('companyListButton').onclick=()=>loadCompanies(true);$('relationshipFilter').onchange=()=>loadCompanies(false);$('salesStatusFilter').onchange=()=>loadCompanies(false);$('regionFilter').onchange=()=>loadCompanies(false);"
+          if old_load not in s:
+              raise SystemExit('loadCompanies block not found')
+          s=s.replace(old_load,new_load,1)
+          p.write_text(s,encoding='utf-8')
+      - name: Commit change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Add customer region filter"
+          git push
