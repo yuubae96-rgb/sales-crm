@@ -1,0 +1,41 @@
+name: Add contact persona notes
+on:
+  push:
+    paths:
+      - '.github/workflows/add-persona-notes.yml'
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch index.html
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          old="${p.map(x=>`<div class=\"row\">${esc(x.name)}<br>${esc(x.department||'')} ${esc(x.position||'')}</div>`).join('')||'<p>人物登録なし</p>'}"
+          new="${p.map(x=>`<div class=\"row contact-person-card\"><strong>${esc(x.name)}</strong><br>${esc(x.department||'')} ${esc(x.position||'')}<label>人物像・傾向メモ</label><textarea id=\"personaNotes-${x.id}\" placeholder=\"例：結論から話すと反応が良い／品質重視／価格より納期を気にする\">${esc(x.persona_notes||'')}</textarea><button type=\"button\" class=\"secondary\" data-save-persona=\"${x.id}\">人物メモを保存</button></div>`).join('')||'<p>人物登録なし</p>'}"
+          if old not in s:
+              raise SystemExit('target contact rendering not found')
+          s=s.replace(old,new,1)
+          marker="if(is&&$('uploadDrawingButton')){"
+          inject="""document.querySelectorAll('[data-save-persona]').forEach(btn=>btn.onclick=async()=>{\n  const contactId=btn.dataset.savePersona;\n  const ta=$(`personaNotes-${contactId}`);\n  if(!ta)return;\n  const oldText=btn.textContent;btn.disabled=true;btn.textContent='保存中…';\n  try{await patch(`/rest/v1/contacts?id=eq.${contactId}`,{persona_notes:ta.value||null});btn.textContent='保存しました';setTimeout(()=>{if(document.body.contains(btn)){btn.disabled=false;btn.textContent=oldText}},900)}catch(e){btn.disabled=false;btn.textContent=oldText;alert(e.message)}\n});\n"""
+          if marker not in s:
+              raise SystemExit('injection marker not found')
+          s=s.replace(marker,inject+marker,1)
+          css_marker='.drawing-upload-note{font-size:13px;color:#666;line-height:1.5;margin:4px 0 10px}'
+          css_add=css_marker+'.contact-person-card{padding:14px 0}.contact-person-card textarea{min-height:88px}.contact-person-card button{margin-top:7px}'
+          if css_marker in s:
+              s=s.replace(css_marker,css_add,1)
+          p.write_text(s)
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add index.html
+          git commit -m "Add persona notes per contact" || exit 0
+          git push
