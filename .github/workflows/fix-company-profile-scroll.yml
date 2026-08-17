@@ -1,0 +1,36 @@
+name: Fix company detail scroll
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-company-profile-scroll.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch index.html
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          old = "$('companyList').classList.add('hidden');$('companyProfile').classList.remove('hidden')}"
+          new = "$('companyList').classList.add('hidden');$('companyProfile').classList.remove('hidden');setTimeout(()=>{const el=$('companyProfile');const y=el.getBoundingClientRect().top+window.scrollY-78;window.scrollTo({top:Math.max(0,y),behavior:'auto'})},0)}"
+          if old not in s:
+              raise SystemExit('target code not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Open company detail at company name"
+          git push
