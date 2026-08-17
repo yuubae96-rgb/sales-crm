@@ -1,0 +1,45 @@
+name: Preserve company list filters on back
+on:
+  push:
+    paths:
+      - '.github/workflows/preserve-company-filter-back.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch navigation state
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+
+          old="if(pushState)history.pushState({view:'companies'},'','#companies');"
+          new="""const listState={view:'companies',filters:{relationship:ty,salesStatus:st,region:rg},scrollY:window.scrollY};if(pushState)history.pushState(listState,'','#companies');else if(history.state?.view==='companies')history.replaceState(listState,'','#companies');"""
+          if old not in s:
+              raise SystemExit('company pushState marker not found')
+          s=s.replace(old,new,1)
+
+          old="async function showCompany(id,pushState=true){if(pushState){companyListScrollY=window.scrollY;history.pushState({view:'company',id:String(id)},'',`#company-${id}`)}"
+          new="""async function showCompany(id,pushState=true){if(pushState){companyListScrollY=window.scrollY;const prev={view:'companies',filters:{relationship:$('relationshipFilter').value,salesStatus:$('salesStatusFilter').value,region:$('regionFilter').value},scrollY:companyListScrollY};history.replaceState(prev,'','#companies');history.pushState({view:'company',id:String(id)},'',`#company-${id}`)}"""
+          if old not in s:
+              raise SystemExit('showCompany marker not found')
+          s=s.replace(old,new,1)
+
+          old="window.addEventListener('popstate',async e=>{const s=e.state||{};if(s.view==='companies'){await loadCompanies(false);setTimeout(()=>window.scrollTo(0,companyListScrollY||0),0)}else if(s.view==='company'&&s.id){await showCompany(s.id,false)}else{$('companyList').classList.add('hidden');$('companyProfile').classList.add('hidden')}});"
+          new="""window.addEventListener('popstate',async e=>{const s=e.state||{};if(s.view==='companies'){if(s.filters){$('relationshipFilter').value=s.filters.relationship||'すべて';$('salesStatusFilter').value=s.filters.salesStatus||'すべて';$('regionFilter').value=s.filters.region||'すべて'}await loadCompanies(false);const y=Number.isFinite(s.scrollY)?s.scrollY:(companyListScrollY||0);setTimeout(()=>window.scrollTo(0,y),0)}else if(s.view==='company'&&s.id){await showCompany(s.id,false)}else{$('companyList').classList.add('hidden');$('companyProfile').classList.add('hidden')}});"""
+          if old not in s:
+              raise SystemExit('popstate marker not found')
+          s=s.replace(old,new,1)
+
+          p.write_text(s,encoding='utf-8')
+      - name: Commit change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Preserve company list filters on back navigation"
+          git push
