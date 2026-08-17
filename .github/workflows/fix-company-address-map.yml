@@ -1,0 +1,36 @@
+name: Fix company detail address map
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-company-address-map.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch company detail layout
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          old = "<span class=\"badge ${esc(c.relationship_type||'その他')}\">${esc(c.relationship_type||'その他')}</span><span class=\"status\">${esc(c.ai_review_status||'未調査')}</span><label>取引先区分（顧客、材料、外注、設備、その他）</label><select id=\"profileType\">${opts(c.relationship_type)}</select>"
+          new = "<span class=\"status\">${esc(c.ai_review_status||'未調査')}</span><div style=\"margin-top:12px\"><strong>住所</strong><div style=\"margin-top:5px;line-height:1.55\">${esc(c.address||'住所未登録')}</div>${c.address?`<div style=\"margin-top:6px\"><a href=\"https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address)}\" target=\"_blank\" rel=\"noopener noreferrer\">Googleマップで場所を見る</a></div>`:''}</div>"
+          if old not in s:
+              raise SystemExit('target detail fragment not found')
+          s = s.replace(old, new, 1)
+          old_save = "let body={relationship_type:$('profileType').value,website:$('profileWeb').value||null"
+          new_save = "let body={relationship_type:c.relationship_type,website:$('profileWeb').value||null"
+          if old_save not in s:
+              raise SystemExit('target save fragment not found')
+          s = s.replace(old_save, new_save, 1)
+          p.write_text(s, encoding='utf-8')
+      - name: Commit change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Show address and Google Maps link in company detail"
+          git push
