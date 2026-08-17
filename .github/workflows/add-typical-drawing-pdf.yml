@@ -1,0 +1,81 @@
+name: Add typical drawing PDF feature
+on:
+  push:
+    paths:
+      - '.github/workflows/add-typical-drawing-pdf.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch app
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+
+          old_css=".image-source{font-size:12px;margin-top:3px;display:inline-block}"
+          new_css=".image-source{font-size:12px;margin-top:3px;display:inline-block}.drawing-box{margin-top:16px;padding:14px;border:1px solid #d9d9d9;border-radius:12px;background:#fafafa}.drawing-box h4{margin:0 0 8px}.drawing-item{padding:10px 0;border-bottom:1px solid #e5e5e5}.drawing-item:last-child{border-bottom:0}.drawing-name{font-weight:700;margin-bottom:6px}.drawing-actions{display:flex;gap:8px;align-items:center}.drawing-actions a{display:inline-block;padding:8px 10px;border-radius:9px;background:#e9e9e9;color:#111;text-decoration:none;font-weight:700}.drawing-actions button{width:auto;margin:0;padding:8px 10px;font-size:14px;background:#ffe7e7;color:#8b0000}.drawing-upload-note{font-size:13px;color:#666;line-height:1.5;margin:4px 0 10px}"
+          if old_css not in s:
+              raise SystemExit('CSS anchor not found')
+          s=s.replace(old_css,new_css,1)
+
+          old_vars="let c=a[0],is=c.relationship_type==='顧客',arts=Array.isArray(c.related_articles)?c.related_articles:[];"
+          new_vars="let c=a[0],is=c.relationship_type==='顧客',arts=Array.isArray(c.related_articles)?c.related_articles:[],drawings=Array.isArray(c.typical_drawings)?c.typical_drawings:[];"
+          if old_vars not in s:
+              raise SystemExit('showCompany vars anchor not found')
+          s=s.replace(old_vars,new_vars,1)
+
+          old_tendency="<label>傾向メモ</label><textarea id=\"tendencyNotes\">${esc(c.nameplate_tendency_notes||'')}</textarea></div>`:''}"
+          new_tendency="<label>傾向メモ</label><textarea id=\"tendencyNotes\">${esc(c.nameplate_tendency_notes||'')}</textarea><div class=\"drawing-box\"><h4>典型図面・よく出る図面（PDF）</h4><p class=\"drawing-upload-note\">この会社で典型的によく出る図面PDFを複数登録できます。PDFを開くと別タブで表示します。</p><div id=\"drawingList\">${drawings.map((d,i)=>`<div class=\"drawing-item\"><div class=\"drawing-name\">${esc(d.name||`図面 ${i+1}`)}</div><div class=\"drawing-actions\"><a href=\"${esc(d.url||'')}\" target=\"_blank\" rel=\"noopener noreferrer\">PDFを開く</a><button type=\"button\" data-delete-drawing=\"${i}\">削除</button></div></div>`).join('')||'<div class=\"muted\">まだPDFは登録されていません。</div>'}</div><label>図面名</label><input id=\"drawingLabel\" placeholder=\"例：制御盤用アルミ銘板\"><label>PDFファイル</label><input type=\"file\" id=\"drawingFile\" accept=\"application/pdf,.pdf\"><button type=\"button\" class=\"secondary\" id=\"uploadDrawingButton\">PDFを追加</button></div></div>`:''}"
+          if old_tendency not in s:
+              raise SystemExit('tendency anchor not found')
+          s=s.replace(old_tendency,new_tendency,1)
+
+          old_save=";$('saveProfile').onclick=async()=>{let body="
+          add_handlers=r""";
+          if(is&&$('uploadDrawingButton')){
+            $('uploadDrawingButton').onclick=async()=>{
+              const file=$('drawingFile').files[0];
+              if(!file)return alert('PDFファイルを選んでください');
+              if(file.type&&file.type!=='application/pdf')return alert('PDFファイルを選んでください');
+              if(file.size>20*1024*1024)return alert('PDFは20MB以下にしてください');
+              const label=($('drawingLabel').value||'').trim()||file.name.replace(/\.pdf$/i,'');
+              const path=`${id}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.pdf`;
+              const btn=$('uploadDrawingButton');btn.disabled=true;btn.textContent='PDFをアップロード中…';
+              try{
+                const r=await fetch(`${U}/storage/v1/object/company-drawings/${path}`,{method:'POST',headers:{...H,'Content-Type':'application/pdf','x-upsert':'false'},body:file});
+                if(!r.ok){const t=await r.text();throw Error(`PDFアップロード失敗 (${r.status}) ${t.slice(0,200)}`)}
+                const url=`${U}/storage/v1/object/public/company-drawings/${path}`;
+                const next=[...drawings,{name:label,path,url,uploaded_at:new Date().toISOString()}];
+                await patch(`/rest/v1/companies?id=eq.${id}`,{typical_drawings:next});
+                alert('PDFを登録しました');await showCompany(id,false)
+              }catch(e){alert(e.message)}finally{if($('uploadDrawingButton')){$('uploadDrawingButton').disabled=false;$('uploadDrawingButton').textContent='PDFを追加'}}
+            };
+            document.querySelectorAll('[data-delete-drawing]').forEach(btn=>btn.onclick=async()=>{
+              const i=Number(btn.dataset.deleteDrawing),d=drawings[i];if(!d)return;
+              if(!confirm(`「${d.name||'このPDF'}」を削除しますか？`))return;
+              try{
+                if(d.path){const r=await fetch(`${U}/storage/v1/object/company-drawings/${d.path}`,{method:'DELETE',headers:H});if(!r.ok&&r.status!==404)throw Error(`PDF削除失敗 (${r.status})`)}
+                const next=drawings.filter((_,idx)=>idx!==i);
+                await patch(`/rest/v1/companies?id=eq.${id}`,{typical_drawings:next});
+                await showCompany(id,false)
+              }catch(e){alert(e.message)}
+            })
+          }
+          """.strip('\n')
+          if old_save not in s:
+              raise SystemExit('saveProfile anchor not found')
+          s=s.replace(old_save,add_handlers+old_save,1)
+
+          p.write_text(s,encoding='utf-8')
+      - name: Commit app update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Add typical drawing PDF uploads" || exit 0
+          git push
