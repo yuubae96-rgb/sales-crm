@@ -15,18 +15,25 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           p=Path('index.html')
-          s=p.read_text()
+          s=p.read_text(encoding='utf-8')
+          old_query='https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address)}'
+          new_query='https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c.company_name} ${c.address||\'\'}`)}'
+          if old_query in s:
+              s=s.replace(old_query,new_query,1)
           old='target="_blank" rel="noopener noreferrer">Googleマップで場所を見る</a>'
           new='target="_blank" rel="noopener noreferrer" onclick="event.preventDefault();window.open(this.href, \'_blank\', \'noopener,noreferrer\');return false;">Googleマップで場所を見る</a>'
-          if old not in s:
-              raise SystemExit('map link pattern not found')
-          s=s.replace(old,new,1)
-          p.write_text(s)
+          if old in s:
+              s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
           PY
       - name: Commit change
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Open Google Maps in separate window"
+          if git diff --cached --quiet; then
+            echo "No change needed"
+            exit 0
+          fi
+          git commit -m "Open company location in Google Maps separately"
           git push
