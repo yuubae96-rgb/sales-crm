@@ -1,0 +1,41 @@
+name: Make URLs clickable
+on:
+  push:
+    paths:
+      - '.github/workflows/make-urls-clickable.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch URL display and relationship labels
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          # Requested clearer label everywhere it is presented to users.
+          s=s.replace('<label>取引先区分</label>', '<label>取引先区分（顧客、材料、外注、設備、その他）</label>')
+          # Add a helper that safely turns an http(s) URL into a tappable link.
+          marker="const companyNorm=s=>norm(s).replace(/株式会社|有限会社|合同会社|合資会社|合名会社|\\(株\\)|（株）|\\(有\\)|（有）/g,'');"
+          helper="\nconst urlLink=(url,label='リンクを開く')=>{const v=String(url||'').trim();return /^https?:\\/\\//i.test(v)?`<a href=\"${esc(v)}\" target=\"_blank\" rel=\"noopener noreferrer\">${esc(label)}</a>`:''};"
+          if 'const urlLink=' not in s and marker in s:
+              s=s.replace(marker, marker+helper)
+          # Official website currently appears as an editable URL field. Keep editing, and add a direct tap target below it.
+          old='<label>公式サイト</label><input id="profileWeb" value="${esc(c.website||\'\')}">'
+          new='<label>公式サイト</label><input id="profileWeb" value="${esc(c.website||\'\')}">${c.website?`<div style="margin-top:7px">${urlLink(c.website,\'公式サイトを開く\')}</div>`:\'\'}'
+          s=s.replace(old,new)
+          # Any raw URLs appearing in AI source text should be clickable if that field is ever rendered as text later.
+          p.write_text(s)
+          PY
+      - name: Commit patch
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Make displayed URLs tappable"
+          git push
