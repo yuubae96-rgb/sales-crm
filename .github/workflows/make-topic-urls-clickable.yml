@@ -1,0 +1,32 @@
+name: Make topic URLs clickable
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/make-topic-urls-clickable.yml'
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update topic link rendering
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          old="""function topicItems(items){if(!Array.isArray(items)||!items.length)return '<p class=\"muted\">AIが現在の話題を整理中です。</p>';return items.map(x=>`<div class=\"topic-item\"><div class=\"topic-title\">${esc(x.title||'')}</div><div class=\"topic-talk\">${esc(x.talk||'')}</div>${x.why?`<div class=\"topic-why\">なぜ使いやすい？ ${esc(x.why)}</div>`:''}</div>`).join('')}"""
+          new="""function linkifyText(text){const raw=String(text||'');const re=/(https?:\\/\\/[^\\s<>'\"）)】]+)(?=[\\s<>'\"）)】]|$)/g;let out='',last=0,m;while((m=re.exec(raw))){out+=esc(raw.slice(last,m.index));const u=m[1];out+=`<a href=\"${esc(u)}\" target=\"_blank\" rel=\"noopener noreferrer\">${esc(u)}</a>`;last=m.index+u.length}return out+esc(raw.slice(last))}\nfunction topicItems(items){if(!Array.isArray(items)||!items.length)return '<p class=\"muted\">AIが現在の話題を整理中です。</p>';return items.map(x=>`<div class=\"topic-item\"><div class=\"topic-title\">${linkifyText(x.title||'')}</div><div class=\"topic-talk\">${linkifyText(x.talk||'')}</div>${x.why?`<div class=\"topic-why\">なぜ使いやすい？ ${linkifyText(x.why)}</div>`:''}${x.url&&/^https?:\\/\\//i.test(x.url)?`<div class=\"topic-why\"><a href=\"${esc(x.url)}\" target=\"_blank\" rel=\"noopener noreferrer\">この話題の出典を開く</a></div>`:''}</div>`).join('')}"""
+          if old not in s:
+              raise SystemExit('target function not found')
+          p.write_text(s.replace(old,new))
+          PY
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git diff --cached --quiet || git commit -m "Make topic URLs clickable"
+          git push
