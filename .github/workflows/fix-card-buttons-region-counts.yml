@@ -16,54 +16,25 @@ jobs:
           from pathlib import Path
           p=Path('index.html')
           s=p.read_text()
-
-          # style for regional counts
           style_marker='.contact-person-card button{margin-top:7px}'
           style_add='.contact-person-card button{margin-top:7px}.region-counts{margin-top:16px;padding-top:14px;border-top:1px solid #ddd}.region-count-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;margin-top:10px}.region-count-item{background:#f7f7f7;border-radius:10px;padding:9px 10px;font-size:14px}.region-count-item strong{float:right}@media(max-width:560px){.region-count-grid{grid-template-columns:1fr 1fr}}'
-          if '.region-counts{' not in s:
-              s=s.replace(style_marker,style_add)
-
-          # card result: top save button + bottom save button + repeat camera/read buttons
+          if '.region-counts{' not in s:s=s.replace(style_marker,style_add)
           old='<div id="cardResult" class="hidden section-gap"><h3 id="cardResultTitle">読み取り結果</h3><div id="batchCardList"></div><button class="primary" id="saveAllCardsButton">まとめて登録する</button></div>'
           new='<div id="cardResult" class="hidden section-gap"><h3 id="cardResultTitle">読み取り結果</h3><button class="primary" id="saveAllCardsButtonTop">まとめて登録する</button><div id="batchCardList"></div><button class="primary" id="saveAllCardsButton">まとめて登録する</button><div class="section-gap"><p class="muted" style="margin-bottom:6px">続けて次の名刺を処理</p><button class="primary" id="cameraButtonAgain">名刺を撮影</button><button class="primary" id="readCardButtonAgain">名刺を読み取る</button></div></div>'
-          if old in s:
-              s=s.replace(old,new)
-
-          # regional customer counts area under filters
+          if old in s:s=s.replace(old,new)
           old2='<div id="companyList" class="hidden section-gap"></div><div id="companyProfile" class="hidden section-gap"></div>'
           new2='<div id="regionCustomerCounts" class="region-counts"><h3>登録顧客数（地域別）</h3><div class="muted">集計中…</div></div><div id="companyList" class="hidden section-gap"></div><div id="companyProfile" class="hidden section-gap"></div>'
-          if 'id="regionCustomerCounts"' not in s:
-              s=s.replace(old2,new2,1)
-
-          # button wiring: top save behaves exactly like bottom save, repeat camera/read work too
+          if 'id="regionCustomerCounts"' not in s:s=s.replace(old2,new2,1)
           marker="$('cameraButton').onclick=()=>$('cardCamera').click();"
-          if "saveAllCardsButtonTop" in s and "cameraButtonAgain')" not in s:
-              s=s.replace(marker, marker+"document.addEventListener('click',e=>{if(e.target?.id==='saveAllCardsButtonTop')$('saveAllCardsButton').click();if(e.target?.id==='cameraButtonAgain')$('cardCamera').click();if(e.target?.id==='readCardButtonAgain')$('readCardButton').click()});")
-
-          # regional count function after regionOfAddress definition
+          if "saveAllCardsButtonTop" in s and "cameraButtonAgain')" not in s:s=s.replace(marker,marker+"document.addEventListener('click',e=>{if(e.target?.id==='saveAllCardsButtonTop')$('saveAllCardsButton').click();if(e.target?.id==='cameraButtonAgain')$('cardCamera').click();if(e.target?.id==='readCardButtonAgain')$('readCardButton').click()});")
           count_js="""
-async function loadRegionCustomerCounts(){
-  const box=$('regionCustomerCounts');if(!box)return;
-  try{
-    const a=await getAll(`/rest/v1/companies?select=address&relationship_type=eq.${encodeURIComponent('顧客')}`);
-    const order=['北部九州','南部九州','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','山口県','その他'];
-    const counts=Object.fromEntries(order.map(x=>[x,0]));
-    for(const c of a){const r=regionOfAddress(c.address);counts[r]=(counts[r]||0)+1}
-    box.innerHTML=`<h3>登録顧客数（地域別）</h3><div style="font-size:15px;margin-bottom:4px">顧客合計 <strong>${a.length}社</strong></div><div class="region-count-grid">${order.map(r=>`<div class="region-count-item">${r}<strong>${counts[r]||0}社</strong></div>`).join('')}</div>`;
-  }catch(e){box.innerHTML=`<h3>登録顧客数（地域別）</h3><div class="muted">集計を取得できませんでした。</div>`}
-}
+async function loadRegionCustomerCounts(){const box=$('regionCustomerCounts');if(!box)return;try{const a=await getAll(`/rest/v1/companies?select=address&relationship_type=eq.${encodeURIComponent('顧客')}`);const order=['北部九州','南部九州','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','山口県','その他'];const counts=Object.fromEntries(order.map(x=>[x,0]));for(const c of a){const r=regionOfAddress(c.address);counts[r]=(counts[r]||0)+1}box.innerHTML=`<h3>登録顧客数（地域別）</h3><div style="font-size:15px;margin-bottom:4px">顧客合計 <strong>${a.length}社</strong></div><div class="region-count-grid">${order.map(r=>`<div class="region-count-item">${r}<strong>${counts[r]||0}社</strong></div>`).join('')}</div>`}catch(e){box.innerHTML=`<h3>登録顧客数（地域別）</h3><div class="muted">集計を取得できませんでした。</div>`}}
 loadRegionCustomerCounts();
 """
-          if 'async function loadRegionCustomerCounts()' not in s:
-              anchor="function glossaryFor(c){"
-              s=s.replace(anchor,count_js+anchor,1)
-
-          # refresh counts after registering cards
+          if 'async function loadRegionCustomerCounts()' not in s:s=s.replace('function glossaryFor(c){',count_js+'function glossaryFor(c){',1)
           old_alert="alert(`人物 ${ok}件を登録しました。\\n既存会社へ統合 ${merged}件${skipped?`\\n未登録 ${skipped}件`:''}`)};"
           new_alert="alert(`人物 ${ok}件を登録しました。\\n既存会社へ統合 ${merged}件${skipped?`\\n未登録 ${skipped}件`:''}`);loadRegionCustomerCounts()};"
-          if old_alert in s:
-              s=s.replace(old_alert,new_alert,1)
-
+          if old_alert in s:s=s.replace(old_alert,new_alert,1)
           p.write_text(s)
           PY
       - name: Commit changes
@@ -73,3 +44,4 @@ loadRegionCustomerCounts();
           git add index.html
           git commit -m "Fix card save controls and show regional customer counts" || exit 0
           git push
+# trigger-2
