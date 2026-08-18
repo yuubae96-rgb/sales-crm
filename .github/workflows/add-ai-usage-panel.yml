@@ -10,59 +10,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch app
+      - name: Patch index
         run: |
           python3 - <<'PY'
           from pathlib import Path
-
           p=Path('index.html')
-          s=p.read_text()
-          card='''\n<div class="card" id="aiUsageCard"><h2>AI利用状況</h2><div class="row">AI会社調査　累計 <strong id="aiResearchCount">0回</strong></div><div class="row">名刺AI読取　累計 <strong id="aiCardCount">0回</strong></div><div class="row">Web検索　推定 <strong id="aiWebCount">0回</strong></div><div class="row">推定API利用額　<strong id="aiEstimatedCost">$0.00</strong></div><p class="muted">この表示はアプリ内での記録開始後の概算です。OpenAIの実際の請求額とは多少ずれる場合があります。</p></div>\n'''
+          s=p.read_text(encoding='utf-8')
           if 'id="aiUsageCard"' not in s:
-              s=s.replace('</main><script>',card+'</main><script>')
-
-          js='''\nconst AI_USAGE_KEY='salesCrmAiUsageV1';
-function readAiUsage(){try{return JSON.parse(localStorage.getItem(AI_USAGE_KEY)||'{"research":0,"cards":0,"web":0,"cost":0}')}catch{return {research:0,cards:0,web:0,cost:0}}}
-function writeAiUsage(u){localStorage.setItem(AI_USAGE_KEY,JSON.stringify(u));renderAiUsage()}
-function addAiUsage(kind,count=1){const u=readAiUsage();if(kind==='card'){u.cards=(u.cards||0)+count;u.cost=(u.cost||0)+0.003*count}writeAiUsage(u)}
-function renderAiUsage(){const u=readAiUsage();if($('aiResearchCount'))$('aiResearchCount').textContent=`${u.research||0}回`;if($('aiCardCount'))$('aiCardCount').textContent=`${u.cards||0}回`;if($('aiWebCount'))$('aiWebCount').textContent=`${u.web||0}回`;if($('aiEstimatedCost'))$('aiEstimatedCost').textContent=`$${Number(u.cost||0).toFixed(2)}`}
-renderAiUsage();\n'''
+              panel='''<div class="card" id="aiUsageCard"><h2>AI利用状況</h2><div class="row">AI会社調査の累計回数 <strong id="aiResearchCount">0回</strong></div><div class="row">名刺AI読取の累計回数 <strong id="aiCardCount">0回</strong></div><div class="row">Web検索の推定回数 <strong id="aiWebCount">0回</strong></div><div class="row">推定API利用額 <strong id="aiEstimatedCost">$0.00</strong></div><p class="muted">アプリで記録開始後の概算です。</p></div>'''
+              s=s.replace('</main><script>',panel+'</main><script>',1)
           if "const AI_USAGE_KEY='salesCrmAiUsageV1'" not in s:
-              s=s.replace("$('cameraButton').onclick",js+"\n$('cameraButton').onclick")
-          old="cards=(d.cards||[]).map(x=>({...x,relationship_type:'顧客'}));"
-          new="cards=(d.cards||[]).map(x=>({...x,relationship_type:'顧客'}));addAiUsage('card',1);"
-          if old in s and new not in s:
-              s=s.replace(old,new)
-
-          old_result='<div id="batchCardList"></div><button class="primary" id="saveAllCardsButton">まとめて登録する</button></div>'
-          new_result='<button class="primary" id="saveAllCardsButtonTop">まとめて登録する</button><div id="batchCardList"></div><button class="primary" id="saveAllCardsButton">まとめて登録する</button><div class="section-gap"><p class="muted" style="margin-bottom:6px">続けて次の名刺を処理</p><button class="primary" id="cameraButtonAgain">名刺を撮影</button><button class="primary" id="readCardButtonAgain">名刺を読み取る</button></div></div>'
-          if old_result in s:
-              s=s.replace(old_result,new_result)
-          elif 'id="saveAllCardsButtonTop"' not in s:
-              s=s.replace('<div id="batchCardList"></div>','<button class="primary" id="saveAllCardsButtonTop">まとめて登録する</button><div id="batchCardList"></div>',1)
-
-          hook="$('cameraButton').onclick=()=>$('cardCamera').click();"
-          hook_new="$('cameraButton').onclick=()=>$('cardCamera').click();document.addEventListener('click',e=>{if(e.target?.id==='cameraButtonAgain')$('cardCamera').click();if(e.target?.id==='readCardButtonAgain')$('readCardButton').click();if(e.target?.id==='saveAllCardsButtonTop')$('saveAllCardsButton').click()});"
-          if hook in s:
-              s=s.replace(hook,hook_new)
-          elif "saveAllCardsButtonTop')$('saveAllCardsButton').click()" not in s:
-              marker="document.addEventListener('click',e=>{"
-              if marker in s:
-                  s=s.replace(marker,marker+"if(e.target?.id==='saveAllCardsButtonTop')$('saveAllCardsButton').click();",1)
-          p.write_text(s)
-
-          p=Path('research-runner.html')
-          s=p.read_text()
-          old="async function one(c){let r=await fetch(`${U}/functions/v1/research-company`,{method:'POST',headers:{...H,'Content-Type':'application/json'},body:JSON.stringify({company_id:c.id,company_name:c.company_name,address:c.address||'',relationship_type:c.relationship_type||'その他'})});let t=await r.text();if(!r.ok)throw Error(t.slice(0,160));return t}"
-          new="async function one(c){let r=await fetch(`${U}/functions/v1/research-company`,{method:'POST',headers:{...H,'Content-Type':'application/json'},body:JSON.stringify({company_id:c.id,company_name:c.company_name,address:c.address||'',relationship_type:c.relationship_type||'その他'})});let t=await r.text();if(!r.ok)throw Error(t.slice(0,160));try{const k='salesCrmAiUsageV1',u=JSON.parse(localStorage.getItem(k)||'{\\\"research\\\":0,\\\"cards\\\":0,\\\"web\\\":0,\\\"cost\\\":0}');u.research=(u.research||0)+1;u.web=(u.web||0)+2;u.cost=(u.cost||0)+0.03;localStorage.setItem(k,JSON.stringify(u))}catch{}return t}"
-          if old in s:
-              s=s.replace(old,new)
-          p.write_text(s)
+              js="""\nconst AI_USAGE_KEY='salesCrmAiUsageV1';\nfunction readAiUsage(){try{return JSON.parse(localStorage.getItem(AI_USAGE_KEY)||'{\"research\":0,\"cards\":0,\"web\":0,\"cost\":0}')}catch(e){return {research:0,cards:0,web:0,cost:0}}}\nfunction renderAiUsage(){const u=readAiUsage();if($('aiResearchCount'))$('aiResearchCount').textContent=(u.research||0)+'回';if($('aiCardCount'))$('aiCardCount').textContent=(u.cards||0)+'回';if($('aiWebCount'))$('aiWebCount').textContent=(u.web||0)+'回';if($('aiEstimatedCost'))$('aiEstimatedCost').textContent='$'+Number(u.cost||0).toFixed(2)}\nfunction addAiCardUsage(){const u=readAiUsage();u.cards=(u.cards||0)+1;u.cost=(u.cost||0)+0.003;localStorage.setItem(AI_USAGE_KEY,JSON.stringify(u));renderAiUsage()}\nrenderAiUsage();\n"""
+              s=s.replace("$('cameraButton').onclick",js+"$('cameraButton').onclick",1)
+          marker="cards=(d.cards||[]).map(x=>({...x,relationship_type:'顧客'}));"
+          if marker in s and 'addAiCardUsage();' not in s.split(marker,1)[1][:80]:
+              s=s.replace(marker,marker+'addAiCardUsage();',1)
+          p.write_text(s,encoding='utf-8')
           PY
-      - name: Commit changes
+      - name: Commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html research-runner.html
-          git commit -m "Show AI usage and improve repeated card workflow" || exit 0
+          git add index.html
+          git commit -m "Show AI usage panel in app" || exit 0
           git push
