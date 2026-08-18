@@ -16,17 +16,14 @@ jobs:
           from pathlib import Path
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-
           old='<label>人物像・傾向メモ</label><textarea id="personaNotes-${x.id}" placeholder="例：結論から話すと反応が良い／品質重視／価格より納期を気にする">${esc(x.persona_notes||\'\')}</textarea><button type="button" class="secondary" data-save-persona="${x.id}">人物メモを保存</button>'
           new='<label>過去歴・趣味・関心事メモ</label><textarea id="historyInterestNotes-${x.id}" placeholder="例：以前は設計部門／ゴルフが趣味／地元野球チームをよく見る">${esc(x.hobbies_topics||\'\')}</textarea><label>人物像・傾向メモ</label><textarea id="personaNotes-${x.id}" placeholder="例：結論から話すと反応が良い／品質重視／価格より納期を気にする">${esc(x.persona_notes||\'\')}</textarea><button type="button" class="secondary" data-save-persona="${x.id}">人物メモを保存</button>'
           if old in s and 'historyInterestNotes-${x.id}' not in s:
               s=s.replace(old,new,1)
-
           oldsave="try{await patch(`/rest/v1/contacts?id=eq.${contactId}`,{persona_notes:ta.value||null});btn.textContent='保存しました';"
           newsave="const hi=$(`historyInterestNotes-${contactId}`);try{await patch(`/rest/v1/contacts?id=eq.${contactId}`,{persona_notes:ta.value||null,hobbies_topics:hi?.value||null});btn.textContent='保存しました';"
           if oldsave in s:
               s=s.replace(oldsave,newsave,1)
-
           p.write_text(s,encoding='utf-8')
           PY
       - name: Commit
