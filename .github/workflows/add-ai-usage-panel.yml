@@ -34,3 +34,4 @@ renderAiUsage();
           git add index.html
           git commit -m "Use Supabase-backed AI usage counters" || exit 0
           git push
+# final-trigger
