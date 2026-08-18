@@ -35,13 +35,20 @@ renderAiUsage();\n'''
               s=s.replace(old,new)
 
           old_result='<div id="batchCardList"></div><button class="primary" id="saveAllCardsButton">まとめて登録する</button></div>'
-          new_result='<div id="batchCardList"></div><button class="primary" id="saveAllCardsButton">まとめて登録する</button><div class="section-gap"><p class="muted" style="margin-bottom:6px">続けて次の名刺を処理</p><button class="primary" id="cameraButtonAgain">名刺を撮影</button><button class="primary" id="readCardButtonAgain">名刺を読み取る</button></div></div>'
-          if old_result in s and 'cameraButtonAgain' not in s:
+          new_result='<button class="primary" id="saveAllCardsButtonTop">まとめて登録する</button><div id="batchCardList"></div><button class="primary" id="saveAllCardsButton">まとめて登録する</button><div class="section-gap"><p class="muted" style="margin-bottom:6px">続けて次の名刺を処理</p><button class="primary" id="cameraButtonAgain">名刺を撮影</button><button class="primary" id="readCardButtonAgain">名刺を読み取る</button></div></div>'
+          if old_result in s:
               s=s.replace(old_result,new_result)
+          elif 'id="saveAllCardsButtonTop"' not in s:
+              s=s.replace('<div id="batchCardList"></div>','<button class="primary" id="saveAllCardsButtonTop">まとめて登録する</button><div id="batchCardList"></div>',1)
+
           hook="$('cameraButton').onclick=()=>$('cardCamera').click();"
-          hook_new="$('cameraButton').onclick=()=>$('cardCamera').click();document.addEventListener('click',e=>{if(e.target?.id==='cameraButtonAgain')$('cardCamera').click();if(e.target?.id==='readCardButtonAgain')$('readCardButton').click()});"
-          if hook in s and hook_new not in s:
+          hook_new="$('cameraButton').onclick=()=>$('cardCamera').click();document.addEventListener('click',e=>{if(e.target?.id==='cameraButtonAgain')$('cardCamera').click();if(e.target?.id==='readCardButtonAgain')$('readCardButton').click();if(e.target?.id==='saveAllCardsButtonTop')$('saveAllCardsButton').click()});"
+          if hook in s:
               s=s.replace(hook,hook_new)
+          elif "saveAllCardsButtonTop')$('saveAllCardsButton').click()" not in s:
+              marker="document.addEventListener('click',e=>{"
+              if marker in s:
+                  s=s.replace(marker,marker+"if(e.target?.id==='saveAllCardsButtonTop')$('saveAllCardsButton').click();",1)
           p.write_text(s)
 
           p=Path('research-runner.html')
@@ -57,5 +64,5 @@ renderAiUsage();\n'''
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html research-runner.html
-          git commit -m "Show AI usage and speed up repeated card scanning" || exit 0
+          git commit -m "Show AI usage and improve repeated card workflow" || exit 0
           git push
