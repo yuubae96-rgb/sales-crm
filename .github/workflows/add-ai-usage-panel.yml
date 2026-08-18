@@ -10,49 +10,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch index
+      - name: Patch AI usage counters
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-
-          # Keep AI panel in place if missing
-          if 'id="aiUsageCard"' not in s:
-              panel='''<div class="card" id="aiUsageCard"><h2>AI利用状況</h2><div class="row">AI会社調査の累計回数 <strong id="aiResearchCount">0回</strong></div><div class="row">名刺AI読取の累計回数 <strong id="aiCardCount">0回</strong></div><div class="row">Web検索の推定回数 <strong id="aiWebCount">0回</strong></div><div class="row">推定API利用額 <strong id="aiEstimatedCost">$0.00</strong></div><p class="muted">アプリで記録開始後の概算です。</p></div>'''
-              s=s.replace('</main><script>',panel+'</main><script>',1)
-
-          # Top save button immediately under read-count title, plus repeat controls at bottom
-          old='<div id="cardResult" class="hidden section-gap"><h3 id="cardResultTitle">読み取り結果</h3><div id="batchCardList"></div><button class="primary" id="saveAllCardsButton">まとめて登録する</button></div>'
-          new='<div id="cardResult" class="hidden section-gap"><h3 id="cardResultTitle">読み取り結果</h3><button class="primary" id="saveAllCardsButtonTop">まとめて登録する</button><div id="batchCardList"></div><button class="primary" id="saveAllCardsButton">まとめて登録する</button><div class="section-gap"><p class="muted" style="margin-bottom:6px">続けて次の名刺を処理</p><button class="primary" id="cameraButtonAgain">名刺を撮影</button><button class="primary" id="readCardButtonAgain">名刺を読み取る</button></div></div>'
-          if old in s:
-              s=s.replace(old,new,1)
-
-          # Regional customer count display
-          if '.region-counts{' not in s:
-              s=s.replace('.contact-person-card button{margin-top:7px}', '.contact-person-card button{margin-top:7px}.region-counts{margin-top:16px;padding-top:14px;border-top:1px solid #ddd}.region-count-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;margin-top:10px}.region-count-item{background:#f7f7f7;border-radius:10px;padding:9px 10px;font-size:14px}.region-count-item strong{float:right}')
-          if 'id="regionCustomerCounts"' not in s:
-              s=s.replace('<div id="companyList" class="hidden section-gap"></div><div id="companyProfile" class="hidden section-gap"></div>', '<div id="regionCustomerCounts" class="region-counts"><h3>登録顧客数（地域別）</h3><div class="muted">集計中…</div></div><div id="companyList" class="hidden section-gap"></div><div id="companyProfile" class="hidden section-gap"></div>',1)
-
-          # Button behavior: top save calls exactly the same handler as bottom save
-          camera_marker="$('cameraButton').onclick=()=>$('cardCamera').click();"
-          listener="document.addEventListener('click',e=>{if(e.target?.id==='saveAllCardsButtonTop')$('saveAllCardsButton').click();if(e.target?.id==='cameraButtonAgain')$('cardCamera').click();if(e.target?.id==='readCardButtonAgain')$('readCardButton').click()});"
-          if 'saveAllCardsButtonTop' in s and listener not in s:
-              s=s.replace(camera_marker,camera_marker+listener,1)
-
-          count_js="""
-async function loadRegionCustomerCounts(){const box=$('regionCustomerCounts');if(!box)return;try{const a=await getAll(`/rest/v1/companies?select=address&relationship_type=eq.${encodeURIComponent('顧客')}`);const order=['北部九州','南部九州','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','山口県','その他'];const counts=Object.fromEntries(order.map(x=>[x,0]));for(const c of a){const r=regionOfAddress(c.address);counts[r]=(counts[r]||0)+1}box.innerHTML=`<h3>登録顧客数（地域別）</h3><div style="font-size:15px;margin-bottom:4px">顧客合計 <strong>${a.length}社</strong></div><div class="region-count-grid">${order.map(r=>`<div class="region-count-item">${r}<strong>${counts[r]||0}社</strong></div>`).join('')}</div>`}catch(e){box.innerHTML=`<h3>登録顧客数（地域別）</h3><div class="muted">集計を取得できませんでした。</div>`}}
-loadRegionCustomerCounts();
+          start=s.index("const AI_USAGE_KEY='salesCrmAiUsageV1';")
+          end=s.index("$('cameraButton').onclick", start)
+          new="""async function renderAiUsage(){try{const a=await get('/rest/v1/ai_usage_stats?id=eq.1&select=company_research_count,card_read_count,web_search_count,input_tokens,output_tokens,estimated_cost_usd,updated_at');const u=a[0]||{};if($('aiResearchCount'))$('aiResearchCount').textContent=Number(u.company_research_count||0).toLocaleString()+'回';if($('aiCardCount'))$('aiCardCount').textContent=Number(u.card_read_count||0).toLocaleString()+'回';if($('aiWebCount'))$('aiWebCount').textContent=Number(u.web_search_count||0).toLocaleString()+'回';if($('aiEstimatedCost'))$('aiEstimatedCost').textContent='$'+Number(u.estimated_cost_usd||0).toFixed(4)}catch(e){console.warn('AI利用状況の取得に失敗',e)}}
+renderAiUsage();
 """
-          if 'async function loadRegionCustomerCounts()' not in s:
-              s=s.replace('function glossaryFor(c){',count_js+'function glossaryFor(c){',1)
-
-          # Refresh regional counts after a batch registration
-          old_alert="alert(`人物 ${ok}件を登録しました。\\n既存会社へ統合 ${merged}件${skipped?`\\n未登録 ${skipped}件`:''}`)};"
-          new_alert="alert(`人物 ${ok}件を登録しました。\\n既存会社へ統合 ${merged}件${skipped?`\\n未登録 ${skipped}件`:''}`);loadRegionCustomerCounts()};"
-          if old_alert in s:
-              s=s.replace(old_alert,new_alert,1)
-
+          s=s[:start]+new+s[end:]
+          s=s.replace("cards=(d.cards||[]).map(x=>({...x,relationship_type:'顧客'}));addAiCardUsage();", "cards=(d.cards||[]).map(x=>({...x,relationship_type:'顧客'}));renderAiUsage();", 1)
+          s=s.replace('Web検索の推定回数','Web検索の累計回数',1)
+          s=s.replace('アプリで記録開始後の概算です。','この営業管理アプリが実際に呼び出したAI処理をSupabaseで累積しています。API利用額はOpenAIの使用トークン数とWeb検索回数から算出した推定額です。',1)
           p.write_text(s,encoding='utf-8')
           PY
       - name: Commit
@@ -60,5 +32,5 @@ loadRegionCustomerCounts();
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Fix card controls and show regional customer counts" || exit 0
+          git commit -m "Use Supabase-backed AI usage counters" || exit 0
           git push
