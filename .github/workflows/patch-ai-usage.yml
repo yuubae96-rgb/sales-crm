@@ -1,0 +1,40 @@
+name: Patch AI usage tracking
+on:
+  push:
+    paths:
+      - '.github/workflows/patch-ai-usage.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch index.html
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          old="""const AI_USAGE_KEY='salesCrmAiUsageV1';
+function readAiUsage(){try{return JSON.parse(localStorage.getItem(AI_USAGE_KEY)||'{\"research\":0,\"cards\":0,\"web\":0,\"cost\":0}')}catch(e){return {research:0,cards:0,web:0,cost:0}}}
+function renderAiUsage(){const u=readAiUsage();if($('aiResearchCount'))$('aiResearchCount').textContent=(u.research||0)+'回';if($('aiCardCount'))$('aiCardCount').textContent=(u.cards||0)+'回';if($('aiWebCount'))$('aiWebCount').textContent=(u.web||0)+'回';if($('aiEstimatedCost'))$('aiEstimatedCost').textContent='$'+Number(u.cost||0).toFixed(2)}
+function addAiCardUsage(){const u=readAiUsage();u.cards=(u.cards||0)+1;u.cost=(u.cost||0)+0.003;localStorage.setItem(AI_USAGE_KEY,JSON.stringify(u));renderAiUsage()}
+renderAiUsage();"""
+          new="""async function renderAiUsage(){try{const a=await get('/rest/v1/ai_usage_stats?id=eq.1&select=company_research_count,card_read_count,web_search_count,input_tokens,output_tokens,estimated_cost_usd,updated_at');const u=a[0]||{};if($('aiResearchCount'))$('aiResearchCount').textContent=Number(u.company_research_count||0).toLocaleString()+'回';if($('aiCardCount'))$('aiCardCount').textContent=Number(u.card_read_count||0).toLocaleString()+'回';if($('aiWebCount'))$('aiWebCount').textContent=Number(u.web_search_count||0).toLocaleString()+'回';if($('aiEstimatedCost'))$('aiEstimatedCost').textContent='$'+Number(u.estimated_cost_usd||0).toFixed(4)}catch(e){console.warn('AI利用状況の取得に失敗',e)}}
+renderAiUsage();"""
+          if old not in s:
+              raise SystemExit('target AI usage block not found')
+          s=s.replace(old,new,1)
+          s=s.replace("cards=(d.cards||[]).map(x=>({...x,relationship_type:'顧客'}));addAiCardUsage();", "cards=(d.cards||[]).map(x=>({...x,relationship_type:'顧客'}));renderAiUsage();", 1)
+          s=s.replace('Web検索の推定回数', 'Web検索の累計回数', 1)
+          s=s.replace('アプリで記録開始後の概算です。', 'この営業管理アプリが実際に呼び出したAI処理をSupabaseで累積しています。API利用額はOpenAIの使用トークン数とWeb検索回数から算出した推定額です。', 1)
+          p.write_text(s)
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Track sales CRM AI usage in Supabase"
+          git push
