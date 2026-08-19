@@ -1,0 +1,42 @@
+name: Integrate scanner import link
+on:
+  push:
+    paths:
+      - '.github/workflows/integrate-scanner-link.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add scanner import entry to main screen
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='<button class="primary" id="readCardButton">名刺を読み取る</button>'
+          add='''<button class="primary" id="readCardButton">名刺を読み取る</button><div class="section-gap"><h3>スキャナーから一括読込</h3><p class="muted">大量の名刺はスキャナーでPDF・JPG・PNGにしてまとめて読み込めます。</p><button class="secondary" type="button" id="openScannerImportButton">スキャナー名刺を一括読込</button></div>'''
+          if 'id="openScannerImportButton"' not in s:
+              if marker not in s: raise SystemExit('main card read button marker not found')
+              s=s.replace(marker,add,1)
+          js="""\nconst scannerImportButton=document.getElementById('openScannerImportButton');if(scannerImportButton)scannerImportButton.onclick=()=>{location.href='./scanner-import.html'};\n"""
+          script='</script></body></html>'
+          if "scannerImportButton=document.getElementById('openScannerImportButton')" not in s:
+              if script not in s: raise SystemExit('closing script marker not found')
+              s=s.replace(script,js+script,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Basic validation
+        run: |
+          grep -q 'id="openScannerImportButton"' index.html
+          grep -q 'scanner-import.html' index.html
+          grep -q 'AIで名刺を一括読込' scanner-import.html
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Integrate scanner batch import into main screen" || exit 0
+          git push
