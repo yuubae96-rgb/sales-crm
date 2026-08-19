@@ -1,0 +1,34 @@
+name: Add bulk scanner card import
+on:
+  push:
+    paths:
+      - '.github/workflows/add-bulk-card-import.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch index
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html'); s=p.read_text()
+          old='<button class="primary" id="readCardButton">名刺を読み取る</button>'
+          new='''<button class="primary" id="readCardButton">名刺を読み取る</button><div class="section-gap"><h3>スキャナーから一括読込</h3><p class="muted">スキャナーで保存したPDF、JPG、PNGをまとめて選べます。大量の場合は20ファイルずつ自動で分けてAIが読み取ります。</p><input type="file" id="bulkCardFiles" accept="application/pdf,image/jpeg,image/png,image/webp" multiple><button class="primary" id="bulkReadCardButton">スキャンした名刺を一括読込</button><div id="bulkProgress" class="muted" style="margin-top:8px"></div></div>'''
+          if 'id="bulkCardFiles"' not in s: s=s.replace(old,new)
+          marker="$('saveAllCardsButton').onclick=async function()"
+          js=r'''async function fileToDataUrl(f){return await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(r.error);r.readAsDataURL(f)})}
+$('bulkReadCardButton').onclick=async function(){const fs=[...$('bulkCardFiles').files];if(!fs.length)return alert('スキャナーで保存したPDFまたは画像を選んでください');this.disabled=true;const old=this.textContent;let all=[];try{for(let i=0;i<fs.length;i+=20){const batch=fs.slice(i,i+20);$('bulkProgress').textContent=`${Math.min(i+20,fs.length)} / ${fs.length} ファイルをAIで読み取り中…`;const payload=[];for(const f of batch)payload.push({data:await fileToDataUrl(f),type:f.type,name:f.name});const r=await fetch(`${U}/functions/v1/read-business-card`,{method:'POST',headers:{...H,'Content-Type':'application/json'},body:JSON.stringify({files:payload})});const d=await r.json();if(!r.ok)throw Error(d.error||'一括読み取り失敗');all.push(...(d.cards||[]));renderAiUsage()}cards=all.map(x=>({...x,relationship_type:'顧客'}));$('batchCardList').innerHTML=cards.map((c,i)=>`<div class="batch-card"><h4>名刺 ${i+1}</h4><label>取引先区分（顧客、材料、外注、設備、その他）</label><select data-i="${i}" data-f="relationship_type">${opts('顧客')}</select><label>会社名</label><input data-i="${i}" data-f="company_name" value="${esc(c.company_name)}"><label>氏名</label><input data-i="${i}" data-f="person_name" value="${esc(c.person_name)}"><label>部署</label><input data-i="${i}" data-f="department" value="${esc(c.department)}"><label>役職</label><input data-i="${i}" data-f="position" value="${esc(c.position)}"><label>電話</label><input data-i="${i}" data-f="phone" value="${esc(c.phone)}"><label>メール</label><input data-i="${i}" data-f="email" value="${esc(c.email)}"><label>住所</label><input data-i="${i}" data-f="address" value="${esc(c.address)}"></div>`).join('');document.querySelectorAll('[data-i]').forEach(e=>e.oninput=()=>cards[+e.dataset.i][e.dataset.f]=e.value);$('cardResultTitle').textContent=`${cards.length}枚の名刺を読み取りました`;$('cardResult').classList.remove('hidden');$('bulkProgress').textContent=`完了：${cards.length}枚の名刺を読み取りました`;setTimeout(()=>$('cardResult').scrollIntoView({behavior:'smooth',block:'start'}),50)}catch(e){$('bulkProgress').textContent='途中で停止しました';alert(e.message)}finally{this.disabled=false;this.textContent=old}};
+'''
+          if "$('bulkReadCardButton').onclick" not in s: s=s.replace(marker,js+marker)
+          p.write_text(s)
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Support scanner bulk business card import" || exit 0
+          git push
