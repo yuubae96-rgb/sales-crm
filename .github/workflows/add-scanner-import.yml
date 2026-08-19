@@ -69,3 +69,4 @@ $('scannerImportButton').onclick=async function(){
           git add index.html
           git commit -m "Add scanner batch business-card import" || exit 0
           git push
+# trigger
