@@ -1,0 +1,32 @@
+name: Load contact short notes script
+on:
+  push:
+    paths:
+      - '.github/workflows/add-contact-short-notes-script.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch index
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old='</body></html>'
+          new='<script src="./contact-short-notes.js?v=20260821-1"></script></body></html>'
+          if 'contact-short-notes.js' not in s:
+              if old not in s: raise SystemExit('body close not found')
+              s=s.replace(old,new,1)
+              p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add index.html
+          git commit -m "Load one-line people notes" || exit 0
+          git push
