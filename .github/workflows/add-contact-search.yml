@@ -1,0 +1,41 @@
+name: Add contact search filters
+on:
+  push:
+    paths:
+      - '.github/workflows/add-contact-search.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch contact features
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('contact-features.js')
+          s=p.read_text(encoding='utf-8')
+
+          css_old="    .manual-key-row input{width:20px;height:20px;margin:0}\n"
+          css_new=css_old+"    .person-search-box{margin-top:12px;padding:12px;border:1px solid #ddd;border-radius:14px;background:#fafafa}\n    .person-filter-row{display:flex;gap:10px;align-items:center;margin-top:10px}\n    .person-filter-row label{display:flex;align-items:center;gap:7px;margin:0;font-weight:700}\n    .person-filter-row input{width:20px;height:20px;margin:0}\n    .person-result-count{font-size:13px;color:#666;margin-top:8px}\n"
+          if css_old not in s: raise SystemExit('css marker not found')
+          s=s.replace(css_old,css_new,1)
+
+          marker="  if(!byId('manualContactButton')){\n"
+          inject="""  if(!byId('contactSearchBox')){\n    const search=document.createElement('div');\n    search.id='contactSearchBox';\n    search.className='person-search-box';\n    search.innerHTML=`<label for=\"contactSearchInput\">人物を検索</label><input id=\"contactSearchInput\" type=\"search\" placeholder=\"氏名・会社名・部署・役職・電話・メールで検索\" autocomplete=\"off\"><div class=\"person-filter-row\"><label><input type=\"checkbox\" id=\"keyPersonOnly\">★ キーマンだけ表示</label></div><div id=\"personResultCount\" class=\"person-result-count\"></div>`;\n    byId('contactListButton').insertAdjacentElement('afterend',search);\n  }\n\n"""
+          if marker not in s: raise SystemExit('html marker not found')
+          s=s.replace(marker,inject+marker,1)
+
+          old="""  async function loadContacts(){\n    try{\n      const [people,cos]=await Promise.all([\n        apiGetAll('/rest/v1/contacts?select=*&order=is_key_person.desc,name.asc'),\n        apiGetAll('/rest/v1/companies?select=id,company_name')\n      ]);\n      const names=new Map(cos.map(c=>[String(c.id),c.company_name||'']));\n      const list=byId('contactList');\n      list.innerHTML=people.map(c=>`<div class=\"row person-row\"><div class=\"person-main\"><strong>${escapeHtml(c.name||'氏名未登録')}</strong><div class=\"person-company\">${escapeHtml(names.get(String(c.company_id))||'会社名未登録')}</div>${escapeHtml(c.department||'')} ${escapeHtml(c.position||'')}<br>${escapeHtml(c.phone||'')}<br>${escapeHtml(c.email||'')}</div><button type=\"button\" class=\"keyman-button ${c.is_key_person?'active':''}\" data-key-person-id=\"${c.id}\" data-key-person-value=\"${c.is_key_person?'1':'0'}\" title=\"${c.is_key_person?'この人はキーマンです':'キーマンにする'}\" aria-label=\"${c.is_key_person?'キーマンを解除':'キーマンに設定'}\">★</button></div>`).join('')||'<p class=\"muted\">人物登録なし</p>';\n      list.classList.remove('hidden');\n      list.querySelectorAll('[data-key-person-id]').forEach(btn=>btn.onclick=async()=>{\n        const id=btn.dataset.keyPersonId;\n        const next=btn.dataset.keyPersonValue!=='1';\n        btn.disabled=true;\n        try{await apiPatch(`/rest/v1/contacts?id=eq.${id}`,{is_key_person:next});await loadContacts()}catch(e){btn.disabled=false;alert(e.message)}\n      });\n    }catch(e){alert(e.message)}\n  }\n\n  byId('contactListButton').onclick=loadContacts;\n"""
+          new="""  let allPeople=[],companyNames=new Map();\n  function renderContacts(){\n    const q=normalize(byId('contactSearchInput')?.value||'');\n    const keyOnly=!!byId('keyPersonOnly')?.checked;\n    const people=allPeople.filter(c=>{\n      if(keyOnly&&!c.is_key_person)return false;\n      if(!q)return true;\n      const company=companyNames.get(String(c.company_id))||'';\n      return normalize([c.name,company,c.department,c.position,c.phone,c.email].join(' ')).includes(q);\n    });\n    const list=byId('contactList');\n    list.innerHTML=people.map(c=>`<div class=\"row person-row\"><div class=\"person-main\"><strong>${escapeHtml(c.name||'氏名未登録')}</strong><div class=\"person-company\">${escapeHtml(companyNames.get(String(c.company_id))||'会社名未登録')}</div>${escapeHtml(c.department||'')} ${escapeHtml(c.position||'')}<br>${escapeHtml(c.phone||'')}<br>${escapeHtml(c.email||'')}</div><button type=\"button\" class=\"keyman-button ${c.is_key_person?'active':''}\" data-key-person-id=\"${c.id}\" data-key-person-value=\"${c.is_key_person?'1':'0'}\" title=\"${c.is_key_person?'この人はキーマンです':'キーマンにする'}\" aria-label=\"${c.is_key_person?'キーマンを解除':'キーマンに設定'}\">★</button></div>`).join('')||'<p class=\"muted\">該当する人物はいません。</p>';\n    list.classList.remove('hidden');\n    if(byId('personResultCount'))byId('personResultCount').textContent=`${people.length}人表示 / 全${allPeople.length}人`;\n    list.querySelectorAll('[data-key-person-id]').forEach(btn=>btn.onclick=async()=>{\n      const id=btn.dataset.keyPersonId;\n      const next=btn.dataset.keyPersonValue!=='1';\n      btn.disabled=true;\n      try{await apiPatch(`/rest/v1/contacts?id=eq.${id}`,{is_key_person:next});await loadContacts()}catch(e){btn.disabled=false;alert(e.message)}\n    });\n  }\n  async function loadContacts(){\n    try{\n      const [people,cos]=await Promise.all([\n        apiGetAll('/rest/v1/contacts?select=*&order=is_key_person.desc,name.asc'),\n        apiGetAll('/rest/v1/companies?select=id,company_name')\n      ]);\n      allPeople=people;\n      companyNames=new Map(cos.map(c=>[String(c.id),c.company_name||'']));\n      renderContacts();\n    }catch(e){alert(e.message)}\n  }\n\n  byId('contactListButton').onclick=loadContacts;\n  byId('contactSearchInput').oninput=()=>{if(allPeople.length)renderContacts()};\n  byId('keyPersonOnly').onchange=()=>{if(allPeople.length)renderContacts()};\n"""
+          if old not in s: raise SystemExit('contact loader block not found')
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+      - name: Commit changes
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add contact-features.js
+          git commit -m "Add searchable contacts and key-person filter" || exit 0
+          git push
