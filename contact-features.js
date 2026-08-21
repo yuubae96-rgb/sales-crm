@@ -23,6 +23,12 @@
     .person-filter-row label{display:flex;align-items:center;gap:7px;margin:0;font-weight:700}
     .person-filter-row input{width:20px;height:20px;margin:0}
     .person-result-count{font-size:13px;color:#666;margin-top:8px}
+    .person-status-badge{display:inline-block;margin:0 0 7px;padding:4px 9px;border-radius:999px;font-size:13px;font-weight:800;background:#d93025;color:#fff}
+    .person-status-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+    .person-status-actions button{width:auto;margin:0;padding:8px 11px;border-radius:9px;font-size:14px;background:#eee;color:#222}
+    .person-status-actions button.active-status{background:#d93025;color:#fff}
+    .person-status-actions button.delete-person{background:#fff0f0;color:#b3261e;border:1px solid #efb7b3}
+    .person-inactive{background:#fff6f5}
   `;
   document.head.appendChild(style);
 
@@ -77,6 +83,11 @@
     if(!r.ok)throw Error('保存に失敗しました');
     return r;
   }
+  async function apiDelete(path){
+    const r=await fetch(SUPABASE_URL+path,{method:'DELETE',headers});
+    if(!r.ok){const t=await r.text();throw Error(`削除に失敗しました (${r.status}) ${t.slice(0,120)}`)}
+    return r;
+  }
   async function loadCompanies(){
     companies=await apiGetAll('/rest/v1/companies?select=id,company_name&order=company_name.asc');
     const dl=byId('manualCompanyOptions');
@@ -98,10 +109,14 @@
       if(keyOnly&&!c.is_key_person)return false;
       if(!q)return true;
       const company=companyNames.get(String(c.company_id))||'';
-      return normalize([c.name,company,c.department,c.position,c.phone,c.email].join(' ')).includes(q);
+      return normalize([c.name,company,c.department,c.position,c.phone,c.email,c.employment_status].join(' ')).includes(q);
     });
     const list=byId('contactList');
-    list.innerHTML=people.map(c=>`<div class="row person-row"><div class="person-main"><strong>${escapeHtml(c.name||'氏名未登録')}</strong><div class="person-company">${escapeHtml(companyNames.get(String(c.company_id))||'会社名未登録')}</div>${escapeHtml(c.department||'')} ${escapeHtml(c.position||'')}<br>${escapeHtml(c.phone||'')}<br>${escapeHtml(c.email||'')}</div><button type="button" class="keyman-button ${c.is_key_person?'active':''}" data-key-person-id="${c.id}" data-key-person-value="${c.is_key_person?'1':'0'}" title="${c.is_key_person?'この人はキーマンです':'キーマンにする'}" aria-label="${c.is_key_person?'キーマンを解除':'キーマンに設定'}">★</button></div>`).join('')||'<p class="muted">該当する人物はいません。</p>';
+    list.innerHTML=people.map(c=>{
+      const status=c.employment_status||'在籍';
+      const inactive=status==='退職'||status==='異動';
+      return `<div class="row person-row ${inactive?'person-inactive':''}"><div class="person-main">${inactive?`<span class="person-status-badge">${escapeHtml(status)}</span><br>`:''}<strong>${escapeHtml(c.name||'氏名未登録')}</strong><div class="person-company">${escapeHtml(companyNames.get(String(c.company_id))||'会社名未登録')}</div>${escapeHtml(c.department||'')} ${escapeHtml(c.position||'')}<br>${escapeHtml(c.phone||'')}<br>${escapeHtml(c.email||'')}<div class="person-status-actions"><button type="button" data-person-status-id="${c.id}" data-person-status="退職" class="${status==='退職'?'active-status':''}">退職</button><button type="button" data-person-status-id="${c.id}" data-person-status="異動" class="${status==='異動'?'active-status':''}">異動</button>${inactive?`<button type="button" data-person-status-id="${c.id}" data-person-status="在籍">在籍に戻す</button>`:''}<button type="button" class="delete-person" data-delete-person-id="${c.id}" data-delete-person-name="${escapeHtml(c.name||'この人物')}">削除</button></div></div><button type="button" class="keyman-button ${c.is_key_person?'active':''}" data-key-person-id="${c.id}" data-key-person-value="${c.is_key_person?'1':'0'}" title="${c.is_key_person?'この人はキーマンです':'キーマンにする'}" aria-label="${c.is_key_person?'キーマンを解除':'キーマンに設定'}">★</button></div>`;
+    }).join('')||'<p class="muted">該当する人物はいません。</p>';
     list.classList.remove('hidden');
     if(byId('personResultCount'))byId('personResultCount').textContent=`${people.length}人表示 / 全${allPeople.length}人`;
     list.querySelectorAll('[data-key-person-id]').forEach(btn=>btn.onclick=async()=>{
@@ -109,6 +124,19 @@
       const next=btn.dataset.keyPersonValue!=='1';
       btn.disabled=true;
       try{await apiPatch(`/rest/v1/contacts?id=eq.${id}`,{is_key_person:next});await loadContacts()}catch(e){btn.disabled=false;alert(e.message)}
+    });
+    list.querySelectorAll('[data-person-status-id]').forEach(btn=>btn.onclick=async()=>{
+      const id=btn.dataset.personStatusId;
+      const status=btn.dataset.personStatus;
+      btn.disabled=true;
+      try{await apiPatch(`/rest/v1/contacts?id=eq.${id}`,{employment_status:status,is_key_person:status==='在籍'?undefined:false});await loadContacts()}catch(e){btn.disabled=false;alert(e.message)}
+    });
+    list.querySelectorAll('[data-delete-person-id]').forEach(btn=>btn.onclick=async()=>{
+      const id=btn.dataset.deletePersonId;
+      const name=btn.dataset.deletePersonName||'この人物';
+      if(!confirm(`「${name}」を削除しますか？\nこの人物に紐づく営業活動も削除されます。`))return;
+      btn.disabled=true;
+      try{await apiDelete(`/rest/v1/contacts?id=eq.${id}`);await loadContacts()}catch(e){btn.disabled=false;alert(e.message)}
     });
   }
   async function loadContacts(){
@@ -164,7 +192,7 @@
       }
       const existing=await apiGet(`/rest/v1/contacts?company_id=eq.${company.id}&select=id,name`);
       if(existing.some(p=>normalize(p.name)===normalize(name))&&!confirm('同じ会社に同名の人物がいます。それでも登録しますか？'))return;
-      const r=await fetch(`${SUPABASE_URL}/rest/v1/contacts`,{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({company_id:company.id,name,department:byId('manualDepartment').value||'',position:byId('manualPosition').value||'',phone:byId('manualPhone').value||'',email:byId('manualEmail').value||'',is_key_person:byId('manualIsKeyPerson').checked})});
+      const r=await fetch(`${SUPABASE_URL}/rest/v1/contacts`,{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({company_id:company.id,name,department:byId('manualDepartment').value||'',position:byId('manualPosition').value||'',phone:byId('manualPhone').value||'',email:byId('manualEmail').value||'',is_key_person:byId('manualIsKeyPerson').checked,employment_status:'在籍'})});
       if(!r.ok){const t=await r.text();throw Error(`人物登録に失敗しました (${r.status}) ${t.slice(0,160)}`)}
       alert('人物を登録しました');
       ['manualCompanyName','manualPersonName','manualDepartment','manualPosition','manualPhone','manualEmail'].forEach(id=>byId(id).value='');
