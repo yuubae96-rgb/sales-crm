@@ -1,0 +1,107 @@
+name: Add key person and manual contact features
+on:
+  push:
+    paths:
+      - '.github/workflows/add-keyperson-manual-contact.yml'
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch index.html
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+
+          css_marker='.region-count-item strong{float:right}'
+          css_add=css_marker+'''.person-row{display:flex;gap:12px;align-items:flex-start}.person-main{flex:1;min-width:0}.keyman-button{width:48px;min-width:48px;height:48px;margin:0;padding:0;border-radius:50%;font-size:27px;line-height:48px;background:#eee;color:#999}.keyman-button.active{background:#fff2b8;color:#e0a000}.company-name-in-person{font-size:14px;font-weight:800;color:#555;margin:3px 0 6px}.manual-person-form{margin-top:12px;padding:14px;border:1px solid #ddd;border-radius:14px;background:#fafafa}.manual-person-form .choice{margin-top:12px}'''
+          if css_marker not in s:
+              raise SystemExit('CSS marker not found')
+          s=s.replace(css_marker,css_add,1)
+
+          old_html='<div class="card"><h2>人物(決定するキーマン攻略)</h2><button class="secondary" id="contactListButton">人物一覧</button><div id="contactList" class="hidden section-gap"></div></div><div class="card"><h2>営業活動</h2>'
+          new_html='''<div class="card"><h2>人物(決定するキーマン攻略)</h2><button class="secondary" id="contactListButton">人物一覧</button><button class="secondary" id="manualContactButton">名刺なしで人物を登録</button><div id="manualContactForm" class="hidden manual-person-form"><label>会社名</label><input id="manualCompanyName" list="manualCompanyOptions" placeholder="会社名を入力・選択"><datalist id="manualCompanyOptions"></datalist><label>氏名</label><input id="manualPersonName" placeholder="例：山田 太郎"><label>部署</label><input id="manualDepartment" placeholder="例：製造部"><label>役職</label><input id="manualPosition" placeholder="例：課長"><label>電話</label><input id="manualPhone" inputmode="tel"><label>メール</label><input id="manualEmail" inputmode="email"><label class="choice"><input type="checkbox" id="manualIsKeyPerson">★ この人はキーマン</label><button class="primary" id="saveManualContactButton">人物を登録する</button></div><div id="contactList" class="hidden section-gap"></div></div><div class="card"><h2>営業活動</h2>'''
+          if old_html not in s:
+              raise SystemExit('person card HTML marker not found')
+          s=s.replace(old_html,new_html,1)
+
+          old_js="$('contactListButton').onclick=async()=>{try{let a=await get('/rest/v1/contacts?select=*&order=name.asc');$('contactList').innerHTML=a.map(c=>`<div class=\"row\"><strong>${esc(c.name)}</strong><br>${esc(c.department||'')} ${esc(c.position||'')}<br>${esc(c.phone||'')}<br>${esc(c.email||'')}</div>`).join('');$('contactList').classList.remove('hidden')}catch(e){alert(e.message)}};"
+          new_js=r'''let manualCompanies=[];
+async function loadManualCompanies(){
+  manualCompanies=await getAll('/rest/v1/companies?select=id,company_name&order=company_name.asc');
+  const dl=$('manualCompanyOptions');
+  if(dl)dl.innerHTML=manualCompanies.map(c=>`<option value="${esc(c.company_name||'')}"></option>`).join('');
+}
+async function loadContacts(){
+  try{
+    const [a,companies]=await Promise.all([
+      getAll('/rest/v1/contacts?select=*&order=is_key_person.desc,name.asc'),
+      getAll('/rest/v1/companies?select=id,company_name')
+    ]);
+    const companyMap=new Map(companies.map(c=>[String(c.id),c.company_name||'']));
+    $('contactList').innerHTML=a.map(c=>`<div class="row person-row"><div class="person-main"><strong>${esc(c.name||'氏名未登録')}</strong><div class="company-name-in-person">${esc(companyMap.get(String(c.company_id))||'会社未登録')}</div>${esc(c.department||'')} ${esc(c.position||'')}<br>${esc(c.phone||'')}<br>${esc(c.email||'')}</div><button type="button" class="keyman-button ${c.is_key_person?'active':''}" data-keyman-id="${c.id}" data-keyman-value="${c.is_key_person?'1':'0'}" aria-label="${c.is_key_person?'キーマンを解除':'キーマンに設定'}" title="${c.is_key_person?'キーマンです':'キーマンにする'}">★</button></div>`).join('')||'<p>人物登録なし</p>';
+    $('contactList').classList.remove('hidden');
+    document.querySelectorAll('[data-keyman-id]').forEach(btn=>btn.onclick=async()=>{
+      const id=btn.dataset.keymanId;
+      const next=btn.dataset.keymanValue!=='1';
+      btn.disabled=true;
+      try{await patch(`/rest/v1/contacts?id=eq.${id}`,{is_key_person:next});await loadContacts()}catch(e){btn.disabled=false;alert(e.message)}
+    });
+  }catch(e){alert(e.message)}
+}
+$('contactListButton').onclick=loadContacts;
+$('manualContactButton').onclick=async()=>{
+  const form=$('manualContactForm');
+  const willOpen=form.classList.contains('hidden');
+  form.classList.toggle('hidden');
+  if(willOpen&&!manualCompanies.length){try{await loadManualCompanies()}catch(e){alert('会社一覧の取得に失敗しました：'+e.message)}}
+};
+$('saveManualContactButton').onclick=async function(){
+  const companyName=($('manualCompanyName').value||'').trim();
+  const personName=($('manualPersonName').value||'').trim();
+  if(!companyName)return alert('会社名を選んでください');
+  if(!personName)return alert('氏名を入力してください');
+  if(!manualCompanies.length)await loadManualCompanies();
+  const company=manualCompanies.find(c=>norm(c.company_name)===norm(companyName));
+  if(!company)return alert('会社一覧にある会社名を選んでください。会社が未登録なら、先に会社を登録してください。');
+  this.disabled=true;this.textContent='登録中…';
+  try{
+    const existing=await get(`/rest/v1/contacts?company_id=eq.${company.id}&select=id,name`);
+    if(existing.some(x=>norm(x.name)===norm(personName))&&!confirm('同じ会社に同名の人物がいます。それでも登録しますか？'))return;
+    const r=await fetch(`${U}/rest/v1/contacts`,{method:'POST',headers:{...H,'Content-Type':'application/json'},body:JSON.stringify({company_id:company.id,name:personName,department:$('manualDepartment').value||'',position:$('manualPosition').value||'',phone:$('manualPhone').value||'',email:$('manualEmail').value||'',is_key_person:$('manualIsKeyPerson').checked})});
+    if(!r.ok){const t=await r.text();throw Error(`人物登録に失敗しました (${r.status}) ${t.slice(0,160)}`)}
+    alert('人物を登録しました');
+    ['manualCompanyName','manualPersonName','manualDepartment','manualPosition','manualPhone','manualEmail'].forEach(id=>$(id).value='');
+    $('manualIsKeyPerson').checked=false;
+    $('manualContactForm').classList.add('hidden');
+    await loadContacts();
+  }catch(e){alert(e.message)}finally{this.disabled=false;this.textContent='人物を登録する'}
+};'''
+          if old_js not in s:
+              raise SystemExit('contact list JS marker not found')
+          s=s.replace(old_js,new_js,1)
+
+          p.write_text(s)
+          PY
+      - name: Validate JavaScript
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text()
+          m=re.search(r'<script>(.*)</script>',s,re.S)
+          if not m: raise SystemExit('script not found')
+          Path('/tmp/app.js').write_text(m.group(1))
+          PY
+          node --check /tmp/app.js
+      - name: Commit changes
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add index.html
+          git commit -m "Add key person stars and manual contact registration" || exit 0
+          git push
