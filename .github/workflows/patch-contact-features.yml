@@ -1,0 +1,45 @@
+name: Patch contact features
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch index.html
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          old_html = '''<div class="card"><h2>人物(決定するキーマン攻略)</h2><button class="secondary" id="contactListButton">人物一覧</button><div id="contactList" class="hidden section-gap"></div></div><div class="card"><h2>営業活動</h2><button class="secondary" id="activityListButton">営業活動を見る</button><div id="activityList" class="hidden section-gap"></div></div>'''
+          new_html = '''<div class="card"><h2>人物(決定するキーマン攻略)</h2><button class="primary" id="manualContactButton">名刺なしで人物登録</button><div id="manualContactForm" class="hidden section-gap"><label>会社名</label><input id="manualCompanyName" list="manualCompanyOptions" placeholder="会社名を入力・検索"><datalist id="manualCompanyOptions"></datalist><label>氏名</label><input id="manualPersonName" placeholder="氏名"><label>部署</label><input id="manualDepartment" placeholder="部署（わかれば）"><label>役職</label><input id="manualPosition" placeholder="役職（わかれば）"><label>電話</label><input id="manualPhone" placeholder="電話番号（わかれば）"><label>メール</label><input id="manualEmail" placeholder="メール（わかれば）"><button class="primary" id="saveManualContactButton">人物を登録する</button></div><button class="secondary" id="contactListButton">人物一覧</button><div id="contactList" class="hidden section-gap"></div></div><div class="card"><h2>営業活動</h2><button class="secondary" id="activityListButton">営業活動を見る</button><div id="activityList" class="hidden section-gap"></div></div>'''
+          if old_html not in s:
+              raise SystemExit('contact HTML target not found')
+          s = s.replace(old_html, new_html, 1)
+
+          old_js = '''$('contactListButton').onclick=async()=>{try{let a=await get('/rest/v1/contacts?select=*&order=name.asc');$('contactList').innerHTML=a.map(c=>`<div class="row"><strong>${esc(c.name)}</strong><br>${esc(c.department||'')} ${esc(c.position||'')}<br>${esc(c.phone||'')}<br>${esc(c.email||'')}</div>`).join('');$('contactList').classList.remove('hidden')}catch(e){alert(e.message)}};$('activityListButton').onclick=async()=>{try{let a=await get('/rest/v1/activities?select=*&order=activity_date.desc');$('activityList').innerHTML=a.map(x=>`<div class="row"><strong>${esc(x.activity_date||'')} ${esc(x.activity_type||'')}</strong><br>${esc(x.notes||'')}</div>`).join('')||'<p>営業活動なし</p>';$('activityList').classList.remove('hidden')}catch(e){alert(e.message)}};'''
+          new_js = '''let manualCompanies=[];
+$('manualContactButton').onclick=async()=>{const form=$('manualContactForm');form.classList.toggle('hidden');if(form.classList.contains('hidden'))return;try{manualCompanies=await getAll('/rest/v1/companies?select=id,company_name&order=company_name.asc');$('manualCompanyOptions').innerHTML=manualCompanies.map(c=>`<option value="${esc(c.company_name)}"></option>`).join('')}catch(e){alert('会社一覧を取得できませんでした：'+e.message)}};
+$('saveManualContactButton').onclick=async()=>{const companyName=$('manualCompanyName').value.trim(),name=$('manualPersonName').value.trim();if(!companyName)return alert('会社名を入力してください');if(!name)return alert('氏名を入力してください');try{if(!manualCompanies.length)manualCompanies=await getAll('/rest/v1/companies?select=id,company_name&order=company_name.asc');let co=manualCompanies.find(c=>companyNorm(c.company_name)===companyNorm(companyName));if(!co){if(!confirm(`「${companyName}」は会社一覧にありません。\\n顧客として会社も新規登録しますか？`))return;const r=await fetch(`${U}/rest/v1/companies`,{method:'POST',headers:{...H,'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({company_name:companyName,relationship_type:'顧客',ai_review_status:'未調査'})}),d=await r.json();if(!r.ok)throw Error(d?.message||'会社登録に失敗しました');co=d[0];manualCompanies.push(co)}const existing=await get(`/rest/v1/contacts?company_id=eq.${co.id}&select=name`);if(existing.some(p=>norm(p.name)===norm(name)))return alert('この会社には同じ氏名の人物がすでに登録されています');const r=await fetch(`${U}/rest/v1/contacts`,{method:'POST',headers:{...H,'Content-Type':'application/json'},body:JSON.stringify({company_id:co.id,name,department:$('manualDepartment').value.trim()||'',position:$('manualPosition').value.trim()||'',phone:$('manualPhone').value.trim()||'',email:$('manualEmail').value.trim()||''})});if(!r.ok){const t=await r.text();throw Error(`人物登録に失敗しました (${r.status}) ${t.slice(0,120)}`)}alert('人物を登録しました');['manualCompanyName','manualPersonName','manualDepartment','manualPosition','manualPhone','manualEmail'].forEach(id=>$(id).value='');$('manualContactForm').classList.add('hidden');$('contactListButton').click();loadRegionCustomerCounts()}catch(e){alert(e.message)}};
+$('contactListButton').onclick=async()=>{try{let [a,companies]=await Promise.all([get('/rest/v1/contacts?select=*&order=name.asc'),getAll('/rest/v1/companies?select=id,company_name')]);const names=new Map(companies.map(c=>[String(c.id),c.company_name]));$('contactList').innerHTML=a.map(c=>`<div class="row"><strong>${esc(c.name)}</strong><div class="company-summary"><strong>${esc(names.get(String(c.company_id))||'会社名未登録')}</strong></div>${esc(c.department||'')} ${esc(c.position||'')}<br>${esc(c.phone||'')}<br>${esc(c.email||'')}</div>`).join('')||'<p class="muted">人物登録なし</p>';$('contactList').classList.remove('hidden')}catch(e){alert(e.message)}};$('activityListButton').onclick=async()=>{try{let a=await get('/rest/v1/activities?select=*&order=activity_date.desc');$('activityList').innerHTML=a.map(x=>`<div class="row"><strong>${esc(x.activity_date||'')} ${esc(x.activity_type||'')}</strong><br>${esc(x.notes||'')}</div>`).join('')||'<p>営業活動なし</p>';$('activityList').classList.remove('hidden')}catch(e){alert(e.message)}};'''
+          if old_js not in s:
+              raise SystemExit('contact JS target not found')
+          s = s.replace(old_js, new_js, 1)
+          p.write_text(s, encoding='utf-8')
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Show company names and add manual contact registration"
+          git push
