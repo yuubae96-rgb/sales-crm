@@ -17,11 +17,24 @@
     .manual-person-form{margin-top:12px;padding:14px;border:1px solid #ddd;border-radius:14px;background:#fafafa}
     .manual-key-row{display:flex;align-items:center;gap:8px;margin-top:14px;font-weight:700}
     .manual-key-row input{width:20px;height:20px;margin:0}
+    .person-search-box{margin-top:12px;padding:12px;border:1px solid #ddd;border-radius:14px;background:#fafafa}
+    .person-filter-row{display:flex;gap:10px;align-items:center;margin-top:10px}
+    .person-filter-row label{display:flex;align-items:center;gap:7px;margin:0;font-weight:700}
+    .person-filter-row input{width:20px;height:20px;margin:0}
+    .person-result-count{font-size:13px;color:#666;margin-top:8px}
   `;
   document.head.appendChild(style);
 
   const card=byId('contactListButton')?.closest('.card');
   if(!card)return;
+
+  if(!byId('contactSearchBox')){
+    const search=document.createElement('div');
+    search.id='contactSearchBox';
+    search.className='person-search-box';
+    search.innerHTML=`<label for="contactSearchInput">人物を検索</label><input id="contactSearchInput" type="search" placeholder="氏名・会社名・部署・役職・電話・メールで検索" autocomplete="off"><div class="person-filter-row"><label><input type="checkbox" id="keyPersonOnly">★ キーマンだけ表示</label></div><div id="personResultCount" class="person-result-count"></div>`;
+    byId('contactListButton').insertAdjacentElement('afterend',search);
+  }
 
   if(!byId('manualContactButton')){
     const btn=document.createElement('button');
@@ -70,26 +83,42 @@
     return companies;
   }
 
+  let allPeople=[],companyNames=new Map();
+  function renderContacts(){
+    const q=normalize(byId('contactSearchInput')?.value||'');
+    const keyOnly=!!byId('keyPersonOnly')?.checked;
+    const people=allPeople.filter(c=>{
+      if(keyOnly&&!c.is_key_person)return false;
+      if(!q)return true;
+      const company=companyNames.get(String(c.company_id))||'';
+      return normalize([c.name,company,c.department,c.position,c.phone,c.email].join(' ')).includes(q);
+    });
+    const list=byId('contactList');
+    list.innerHTML=people.map(c=>`<div class="row person-row"><div class="person-main"><strong>${escapeHtml(c.name||'氏名未登録')}</strong><div class="person-company">${escapeHtml(companyNames.get(String(c.company_id))||'会社名未登録')}</div>${escapeHtml(c.department||'')} ${escapeHtml(c.position||'')}<br>${escapeHtml(c.phone||'')}<br>${escapeHtml(c.email||'')}</div><button type="button" class="keyman-button ${c.is_key_person?'active':''}" data-key-person-id="${c.id}" data-key-person-value="${c.is_key_person?'1':'0'}" title="${c.is_key_person?'この人はキーマンです':'キーマンにする'}" aria-label="${c.is_key_person?'キーマンを解除':'キーマンに設定'}">★</button></div>`).join('')||'<p class="muted">該当する人物はいません。</p>';
+    list.classList.remove('hidden');
+    if(byId('personResultCount'))byId('personResultCount').textContent=`${people.length}人表示 / 全${allPeople.length}人`;
+    list.querySelectorAll('[data-key-person-id]').forEach(btn=>btn.onclick=async()=>{
+      const id=btn.dataset.keyPersonId;
+      const next=btn.dataset.keyPersonValue!=='1';
+      btn.disabled=true;
+      try{await apiPatch(`/rest/v1/contacts?id=eq.${id}`,{is_key_person:next});await loadContacts()}catch(e){btn.disabled=false;alert(e.message)}
+    });
+  }
   async function loadContacts(){
     try{
       const [people,cos]=await Promise.all([
         apiGetAll('/rest/v1/contacts?select=*&order=is_key_person.desc,name.asc'),
         apiGetAll('/rest/v1/companies?select=id,company_name')
       ]);
-      const names=new Map(cos.map(c=>[String(c.id),c.company_name||'']));
-      const list=byId('contactList');
-      list.innerHTML=people.map(c=>`<div class="row person-row"><div class="person-main"><strong>${escapeHtml(c.name||'氏名未登録')}</strong><div class="person-company">${escapeHtml(names.get(String(c.company_id))||'会社名未登録')}</div>${escapeHtml(c.department||'')} ${escapeHtml(c.position||'')}<br>${escapeHtml(c.phone||'')}<br>${escapeHtml(c.email||'')}</div><button type="button" class="keyman-button ${c.is_key_person?'active':''}" data-key-person-id="${c.id}" data-key-person-value="${c.is_key_person?'1':'0'}" title="${c.is_key_person?'この人はキーマンです':'キーマンにする'}" aria-label="${c.is_key_person?'キーマンを解除':'キーマンに設定'}">★</button></div>`).join('')||'<p class="muted">人物登録なし</p>';
-      list.classList.remove('hidden');
-      list.querySelectorAll('[data-key-person-id]').forEach(btn=>btn.onclick=async()=>{
-        const id=btn.dataset.keyPersonId;
-        const next=btn.dataset.keyPersonValue!=='1';
-        btn.disabled=true;
-        try{await apiPatch(`/rest/v1/contacts?id=eq.${id}`,{is_key_person:next});await loadContacts()}catch(e){btn.disabled=false;alert(e.message)}
-      });
+      allPeople=people;
+      companyNames=new Map(cos.map(c=>[String(c.id),c.company_name||'']));
+      renderContacts();
     }catch(e){alert(e.message)}
   }
 
   byId('contactListButton').onclick=loadContacts;
+  byId('contactSearchInput').oninput=()=>{if(allPeople.length)renderContacts()};
+  byId('keyPersonOnly').onchange=()=>{if(allPeople.length)renderContacts()};
   byId('manualContactButton').onclick=async()=>{
     const form=byId('manualContactForm');
     const open=form.classList.contains('hidden');
