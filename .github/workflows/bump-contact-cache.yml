@@ -1,0 +1,33 @@
+name: Bump contact feature cache
+on:
+  push:
+    paths:
+      - '.github/workflows/bump-contact-cache.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bump script cache key
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old='./contact-features.js?v=20260821-1'
+          new='./contact-features.js?v=20260821-2'
+          if old in s:
+              s=s.replace(old,new,1)
+              p.write_text(s,encoding='utf-8')
+          elif new not in s:
+              raise SystemExit('contact feature script tag not found')
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add index.html
+          git commit -m "Refresh contact search script cache" || exit 0
+          git push
