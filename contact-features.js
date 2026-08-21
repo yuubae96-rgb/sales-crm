@@ -2,8 +2,10 @@
   const byId=id=>document.getElementById(id);
   const escapeHtml=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
   const normalize=s=>(s||'').normalize('NFKC').replace(/\s+/g,'').toLowerCase();
-  const SUPABASE_URL=window.U||'https://emauqxftmauvsffdjvyh.supabase.co';
-  const headers=window.H||{};
+  const SUPABASE_URL='https://emauqxftmauvsffdjvyh.supabase.co';
+  const SUPABASE_KEY='sb_publishable_9rgwKLiJU9dGVkqttq0-fQ_hrhNqnfa';
+  const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtYXVxeGZ0bWF1dnNmZmRqdnloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4Njg0NzksImV4cCI6MjEwMjQ0NDQ3OX0.iN2xz71VCeP7o6nz89v0wJMrUYkGyPKATtWaCl-MIO4';
+  const headers={apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_ANON}`};
 
   const style=document.createElement('style');
   style.textContent=`
@@ -46,20 +48,17 @@
 
   let companies=[];
   async function apiGet(path){
-    if(typeof window.get==='function')return window.get(path);
     const r=await fetch(SUPABASE_URL+path,{headers});
     const d=await r.json();
     if(!r.ok)throw Error(d?.message||`データ取得エラー (${r.status})`);
     return d;
   }
   async function apiGetAll(path,pageSize=100){
-    if(typeof window.getAll==='function')return window.getAll(path,pageSize);
     let all=[],offset=0;
     while(true){const sep=path.includes('?')?'&':'?';const page=await apiGet(`${path}${sep}limit=${pageSize}&offset=${offset}`);all.push(...page);if(page.length<pageSize)break;offset+=pageSize}
     return all;
   }
   async function apiPatch(path,body){
-    if(typeof window.patch==='function')return window.patch(path,body);
     const r=await fetch(SUPABASE_URL+path,{method:'PATCH',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify(body)});
     if(!r.ok)throw Error('保存に失敗しました');
     return r;
