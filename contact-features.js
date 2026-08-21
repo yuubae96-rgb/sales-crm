@@ -2,6 +2,7 @@
   const byId=id=>document.getElementById(id);
   const escapeHtml=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
   const normalize=s=>(s||'').normalize('NFKC').replace(/\s+/g,'').toLowerCase();
+  const companyNormalize=s=>normalize(s).replace(/株式会社|有限会社|合同会社|合資会社|合名会社|\(株\)|（株）|\(有\)|（有）/g,'');
   const SUPABASE_URL='https://emauqxftmauvsffdjvyh.supabase.co';
   const SUPABASE_KEY='sb_publishable_9rgwKLiJU9dGVkqttq0-fQ_hrhNqnfa';
   const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtYXVxeGZ0bWF1dnNmZmRqdnloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4Njg0NzksImV4cCI6MjEwMjQ0NDQ3OX0.iN2xz71VCeP7o6nz89v0wJMrUYkGyPKATtWaCl-MIO4';
@@ -82,6 +83,12 @@
     if(dl)dl.innerHTML=companies.map(c=>`<option value="${escapeHtml(c.company_name||'')}"></option>`).join('');
     return companies;
   }
+  function findExistingCompany(name){
+    const exact=companies.find(c=>normalize(c.company_name)===normalize(name));
+    if(exact)return exact;
+    const target=companyNormalize(name);
+    return companies.find(c=>companyNormalize(c.company_name)===target)||null;
+  }
 
   let allPeople=[],companyNames=new Map();
   function renderContacts(){
@@ -134,13 +141,26 @@
     this.disabled=true;this.textContent='登録中…';
     try{
       if(!companies.length)await loadCompanies();
-      let company=companies.find(c=>normalize(c.company_name)===normalize(companyName));
+      let company=findExistingCompany(companyName);
+      if(!company){
+        await loadCompanies();
+        company=findExistingCompany(companyName);
+      }
       if(!company){
         if(!confirm(`「${companyName}」は会社一覧にありません。\n顧客として会社も新規登録しますか？`))return;
         const r=await fetch(`${SUPABASE_URL}/rest/v1/companies`,{method:'POST',headers:{...headers,'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({company_name:companyName,relationship_type:'顧客',ai_review_status:'未調査'})});
         const d=await r.json();
-        if(!r.ok)throw Error(d?.message||'会社登録に失敗しました');
-        company=d[0];companies.push(company);
+        if(!r.ok){
+          if(r.status===409||String(d?.message||'').includes('companies_company_name_normalized_uidx')){
+            await loadCompanies();
+            company=findExistingCompany(companyName);
+            if(!company)throw Error(d?.message||'会社登録に失敗しました');
+          }else{
+            throw Error(d?.message||'会社登録に失敗しました');
+          }
+        }else{
+          company=d[0];companies.push(company);
+        }
       }
       const existing=await apiGet(`/rest/v1/contacts?company_id=eq.${company.id}&select=id,name`);
       if(existing.some(p=>normalize(p.name)===normalize(name))&&!confirm('同じ会社に同名の人物がいます。それでも登録しますか？'))return;
