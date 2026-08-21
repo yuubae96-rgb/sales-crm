@@ -89,4 +89,4 @@ window.addEventListener('popstate',async e=>{const hs=e.state||{},saved=readList
 $('contactListButton').onclick=async()=>{try{let a=await get('/rest/v1/contacts?select=*&order=name.asc');$('contactList').innerHTML=a.map(c=>`<div class="row"><strong>${esc(c.name)}</strong><br>${esc(c.department||'')} ${esc(c.position||'')}<br>${esc(c.phone||'')}<br>${esc(c.email||'')}</div>`).join('');$('contactList').classList.remove('hidden')}catch(e){alert(e.message)}};$('activityListButton').onclick=async()=>{try{let a=await get('/rest/v1/activities?select=*&order=activity_date.desc');$('activityList').innerHTML=a.map(x=>`<div class="row"><strong>${esc(x.activity_date||'')} ${esc(x.activity_type||'')}</strong><br>${esc(x.notes||'')}</div>`).join('')||'<p>営業活動なし</p>';$('activityList').classList.remove('hidden')}catch(e){alert(e.message)}};
 
 const scannerImportButton=document.getElementById('openScannerImportButton');if(scannerImportButton)scannerImportButton.onclick=()=>{location.href='./scanner-import.html'};
-</script></body></html>
+</script><script src="./contact-features.js?v=20260821-1"></script></body></html>
