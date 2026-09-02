@@ -5,7 +5,7 @@
   const companyNormalize=s=>normalize(s).replace(/株式会社|有限会社|合同会社|合資会社|合名会社|\(株\)|（株）|\(有\)|（有）/g,'');
   const SUPABASE_URL='https://emauqxftmauvsffdjvyh.supabase.co';
   const SUPABASE_KEY='sb_publishable_9rgwKLiJU9dGVkqttq0-fQ_hrhNqnfa';
-  const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZmZkam91Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4Njg0NzksImV4cCI6MjEwMjQ0NDQ3OX0.iN2xz71VCeP7o6nz89v0wJMrUYkGyPKATtWaCl-MIO4';
+  const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtYXVxeGZ0bWF1dnNmZmRqdnloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4Njg0NzksImV4cCI6MjEwMjQ0NDQ3OX0.iN2xz71VCeP7o6nz89v0wJMrUYkGyPKATtWaCl-MIO4';
   const headers={apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_ANON}`};
 
   const style=document.createElement('style');
