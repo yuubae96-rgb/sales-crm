@@ -5,7 +5,7 @@
   const companyNormalize=s=>normalize(s).replace(/株式会社|有限会社|合同会社|合資会社|合名会社|\(株\)|（株）|\(有\)|（有）/g,'');
   const SUPABASE_URL='https://emauqxftmauvsffdjvyh.supabase.co';
   const SUPABASE_KEY='sb_publishable_9rgwKLiJU9dGVkqttq0-fQ_hrhNqnfa';
-  const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtYXVxeGZ0bWF1dnNmZmRqdnloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4Njg0NzksImV4cCI6MjEwMjQ0NDQ3OX0.iN2xz71VCeP7o6nz89v0wJMrUYkGyPKATtWaCl-MIO4';
+  const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZmZkam91Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4Njg0NzksImV4cCI6MjEwMjQ0NDQ3OX0.iN2xz71VCeP7o6nz89v0wJMrUYkGyPKATtWaCl-MIO4';
   const headers={apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_ANON}`};
 
   const style=document.createElement('style');
@@ -15,7 +15,7 @@
     .person-company{font-size:14px;font-weight:800;color:#555;margin:3px 0 6px}
     .keyman-button{width:48px;min-width:48px;height:48px;margin:0;padding:0;border-radius:50%;font-size:27px;line-height:48px;background:#eee;color:#aaa;border:0}
     .keyman-button.active{background:#fff0ad;color:#d89b00}
-    .manual-person-form,.manual-company-form{margin-top:12px;padding:14px;border:1px solid #ddd;border-radius:14px;background:#fafafa}
+    .manual-person-form,.manual-company-form,.company-quick-person-form{margin-top:12px;padding:14px;border:1px solid #ddd;border-radius:14px;background:#fafafa}
     .manual-key-row{display:flex;align-items:center;gap:8px;margin-top:14px;font-weight:700}
     .manual-key-row input{width:20px;height:20px;margin:0}
     .person-search-box{margin-top:12px;padding:12px;border:1px solid #ddd;border-radius:14px;background:#fafafa}
@@ -29,6 +29,7 @@
     .person-status-actions button.active-status{background:#d93025;color:#fff}
     .person-status-actions button.delete-person{background:#fff0f0;color:#b3261e;border:1px solid #efb7b3}
     .person-inactive{background:#fff6f5}
+    .company-quick-person-button{margin:4px 0 12px}
   `;
   document.head.appendChild(style);
 
@@ -117,4 +118,23 @@
       alert('人物を登録しました');['manualCompanyName','manualPersonName','manualDepartment','manualPosition','manualPhone','manualEmail'].forEach(id=>byId(id).value='');byId('manualIsKeyPerson').checked=false;byId('manualContactForm').classList.add('hidden');await loadContacts()
     }catch(e){alert(e.message)}finally{this.disabled=false;this.textContent='人物を登録する'}
   };
+
+  function enhanceCompanyProfile(){
+    const profile=byId('companyProfile');if(!profile||profile.classList.contains('hidden')||byId('companyQuickPersonButton'))return;
+    const match=location.hash.match(/^#company-(.+)$/);if(!match)return;const companyId=decodeURIComponent(match[1]);
+    const section=[...profile.querySelectorAll('.section-gap')].find(x=>x.querySelector(':scope > h3')?.textContent.trim()==='この会社の人物');if(!section)return;
+    const heading=section.querySelector(':scope > h3');
+    const btn=document.createElement('button');btn.type='button';btn.id='companyQuickPersonButton';btn.className='secondary company-quick-person-button';btn.textContent='＋ この会社に人物を追加';
+    const form=document.createElement('div');form.id='companyQuickPersonForm';form.className='hidden company-quick-person-form';form.innerHTML=`<label>氏名</label><input id="companyQuickPersonName" placeholder="例：山田 太郎"><label>部署</label><input id="companyQuickDepartment" placeholder="例：製造部"><label>役職</label><input id="companyQuickPosition" placeholder="例：課長"><label>電話</label><input id="companyQuickPhone" inputmode="tel"><label>メール</label><input id="companyQuickEmail" inputmode="email"><label class="manual-key-row"><input type="checkbox" id="companyQuickIsKeyPerson">★ この人はキーマン</label><button type="button" class="primary" id="saveCompanyQuickPersonButton">この会社に人物を登録</button>`;
+    heading.insertAdjacentElement('afterend',form);heading.insertAdjacentElement('afterend',btn);
+    btn.onclick=()=>form.classList.toggle('hidden');
+    byId('saveCompanyQuickPersonButton').onclick=async function(){
+      const name=(byId('companyQuickPersonName').value||'').trim();if(!name)return alert('氏名を入力してください');this.disabled=true;this.textContent='登録中…';
+      try{const existing=await apiGet(`/rest/v1/contacts?company_id=eq.${encodeURIComponent(companyId)}&select=id,name`);if(existing.some(p=>normalize(p.name)===normalize(name))&&!confirm('この会社に同名の人物がいます。それでも登録しますか？'))return;
+        const r=await fetch(`${SUPABASE_URL}/rest/v1/contacts`,{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({company_id:companyId,name,department:(byId('companyQuickDepartment').value||'').trim(),position:(byId('companyQuickPosition').value||'').trim(),phone:(byId('companyQuickPhone').value||'').trim(),email:(byId('companyQuickEmail').value||'').trim(),is_key_person:byId('companyQuickIsKeyPerson').checked,employment_status:'在籍'})});if(!r.ok){const t=await r.text();throw Error(`人物登録に失敗しました (${r.status}) ${t.slice(0,160)}`)}
+        alert('この会社に人物を登録しました');if(typeof showCompany==='function')await showCompany(companyId,false);
+      }catch(e){alert(e.message)}finally{this.disabled=false;this.textContent='この会社に人物を登録'}
+    };
+  }
+  const companyProfile=byId('companyProfile');if(companyProfile){new MutationObserver(()=>queueMicrotask(enhanceCompanyProfile)).observe(companyProfile,{childList:true});enhanceCompanyProfile()}
 })();
