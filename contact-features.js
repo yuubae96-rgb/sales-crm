@@ -44,12 +44,12 @@
     form.id='manualCompanyForm';form.className='hidden manual-company-form';
     form.innerHTML=`
       <label>会社名</label><input id="manualNewCompanyName" placeholder="例：株式会社〇〇">
+      <label>担当者</label><input id="manualNewCompanyContact" placeholder="例：山田 太郎">
+      <label>メモ</label><textarea id="manualNewCompanyMemo" rows="4" placeholder="訪問時の情報、取引内容、注意点など"></textarea>
       <label>取引先区分</label><select id="manualNewRelationship"><option>顧客</option><option>材料メーカー</option><option>外注先</option><option>設備会社</option><option>その他</option></select>
       <label>住所</label><input id="manualNewCompanyAddress" placeholder="例：福岡県北九州市…">
       <label>電話</label><input id="manualNewCompanyPhone" inputmode="tel">
       <label>公式サイト</label><input id="manualNewCompanyWebsite" inputmode="url" placeholder="https://…">
-      <label>担当者</label><input id="manualNewCompanyContact" placeholder="例：山田 太郎">
-      <label>メモ</label><textarea id="manualNewCompanyMemo" rows="4" placeholder="訪問時の情報、取引内容、注意点など"></textarea>
       <button type="button" class="primary" id="saveManualCompanyButton">会社を登録する</button>`;
     btn.insertAdjacentElement('afterend',form);
   }
