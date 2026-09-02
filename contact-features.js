@@ -48,6 +48,8 @@
       <label>住所</label><input id="manualNewCompanyAddress" placeholder="例：福岡県北九州市…">
       <label>電話</label><input id="manualNewCompanyPhone" inputmode="tel">
       <label>公式サイト</label><input id="manualNewCompanyWebsite" inputmode="url" placeholder="https://…">
+      <label>担当者</label><input id="manualNewCompanyContact" placeholder="例：山田 太郎">
+      <label>メモ</label><textarea id="manualNewCompanyMemo" rows="4" placeholder="訪問時の情報、取引内容、注意点など"></textarea>
       <button type="button" class="primary" id="saveManualCompanyButton">会社を登録する</button>`;
     btn.insertAdjacentElement('afterend',form);
   }
@@ -76,12 +78,19 @@
   if(byId('manualCompanyButton'))byId('manualCompanyButton').onclick=()=>byId('manualCompanyForm').classList.toggle('hidden');
   if(byId('saveManualCompanyButton'))byId('saveManualCompanyButton').onclick=async function(){
     const companyName=(byId('manualNewCompanyName').value||'').trim();if(!companyName)return alert('会社名を入力してください');
+    const contactName=(byId('manualNewCompanyContact')?.value||'').trim();
+    const memo=(byId('manualNewCompanyMemo')?.value||'').trim();
     this.disabled=true;this.textContent='登録中…';
     try{
       await loadCompanies();const existing=findExistingCompany(companyName);if(existing)return alert(`「${existing.company_name}」はすでに登録されています。`);
-      const body={company_name:companyName,relationship_type:byId('manualNewRelationship').value||'顧客',address:(byId('manualNewCompanyAddress').value||'').trim(),phone:(byId('manualNewCompanyPhone').value||'').trim(),website:(byId('manualNewCompanyWebsite').value||'').trim()||null,ai_review_status:'未調査'};
+      const body={company_name:companyName,relationship_type:byId('manualNewRelationship').value||'顧客',address:(byId('manualNewCompanyAddress').value||'').trim(),phone:(byId('manualNewCompanyPhone').value||'').trim(),website:(byId('manualNewCompanyWebsite').value||'').trim()||null,sales_notes:memo||null,ai_review_status:'未調査'};
       const r=await fetch(`${SUPABASE_URL}/rest/v1/companies`,{method:'POST',headers:{...headers,'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw Error(d?.message||'会社登録に失敗しました');
-      alert('会社を登録しました');['manualNewCompanyName','manualNewCompanyAddress','manualNewCompanyPhone','manualNewCompanyWebsite'].forEach(id=>byId(id).value='');byId('manualNewRelationship').value='顧客';byId('manualCompanyForm').classList.add('hidden');await loadCompanies();if(typeof loadRegionCustomerCounts==='function')loadRegionCustomerCounts();
+      const newCompany=d[0];
+      if(contactName&&newCompany?.id){
+        const pr=await fetch(`${SUPABASE_URL}/rest/v1/contacts`,{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({company_id:newCompany.id,name:contactName,employment_status:'在籍'})});
+        if(!pr.ok){const t=await pr.text();throw Error(`会社は登録しましたが、担当者の登録に失敗しました (${pr.status}) ${t.slice(0,120)}`)}
+      }
+      alert(contactName?'会社と担当者を登録しました':'会社を登録しました');['manualNewCompanyName','manualNewCompanyAddress','manualNewCompanyPhone','manualNewCompanyWebsite','manualNewCompanyContact','manualNewCompanyMemo'].forEach(id=>byId(id).value='');byId('manualNewRelationship').value='顧客';byId('manualCompanyForm').classList.add('hidden');await loadCompanies();if(typeof loadRegionCustomerCounts==='function')loadRegionCustomerCounts();
     }catch(e){alert(e.message)}finally{this.disabled=false;this.textContent='会社を登録する'}
   };
 
