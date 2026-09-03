@@ -4,8 +4,7 @@
   html,body{margin:0!important;padding:0!important;width:100mm!important;background:#fff!important}
   .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important;overflow:visible!important}
 
-  /* Postal code calibrated from actual postcard prints.
-     Keep every digit independently centered inside its printed red box. */
+  /* Postal code calibrated from actual postcard prints. */
   .postal{
     display:flex!important;
     align-items:center!important;
@@ -37,14 +36,14 @@
   }
   .postal-digit:nth-child(3){margin-right:5.65mm!important}
 
-  /* Fine horizontal calibration from the latest photographed print. */
-  .postal-digit:nth-child(1){left:0.4mm!important}
-  .postal-digit:nth-child(2){left:0.8mm!important}
-  .postal-digit:nth-child(3){left:1.1mm!important}
-  .postal-digit:nth-child(4){left:0.9mm!important}
-  .postal-digit:nth-child(5){left:1.1mm!important}
-  .postal-digit:nth-child(6){left:1.4mm!important}
-  /* Latest print shows digit 7 occupying digit 6's box: move it one full box to the right. */
+  /* 1-6: move each 0.4mm right from the previous calibration. */
+  .postal-digit:nth-child(1){left:0.8mm!important}
+  .postal-digit:nth-child(2){left:1.2mm!important}
+  .postal-digit:nth-child(3){left:1.5mm!important}
+  .postal-digit:nth-child(4){left:1.3mm!important}
+  .postal-digit:nth-child(5){left:1.5mm!important}
+  .postal-digit:nth-child(6){left:1.8mm!important}
+  /* Keep digit 7 at the one-box-right correction already applied. */
   .postal-digit:nth-child(7){left:8.95mm!important}
 
   .v-address{line-height:1.5;font-weight:400}
