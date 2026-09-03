@@ -5,16 +5,20 @@
   .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important;overflow:visible!important}
 
   /* Postal code: keep the current 9.20mm spacing/group geometry.
-     Current fixed coordinates are 5mm right of the original baseline. */
+     Current fixed coordinates are 5mm right of the original baseline.
+     Give the postal container extra width so digit 7 is not clipped by the
+     container edge in iOS/Safari print preview. */
   .postal{
     display:block!important;
     position:relative!important;
-    width:73mm!important;
+    width:85mm!important;
     height:7mm!important;
     font-weight:500;
     letter-spacing:0!important;
     white-space:normal!important;
     overflow:visible!important;
+    clip:auto!important;
+    clip-path:none!important;
     transform:translateY(-18mm)!important;
     transform-origin:left top;
   }
@@ -31,6 +35,8 @@
     line-height:1!important;
     font-variant-numeric:tabular-nums;
     overflow:visible!important;
+    clip:auto!important;
+    clip-path:none!important;
   }
   .postal-digit:nth-child(1){left:5.00mm!important}
   .postal-digit:nth-child(2){left:14.20mm!important}
@@ -38,7 +44,7 @@
   .postal-digit:nth-child(4){left:39.10mm!important}
   .postal-digit:nth-child(5){left:48.30mm!important}
   .postal-digit:nth-child(6){left:57.50mm!important}
-  .postal-digit:nth-child(7){left:66.70mm!important}
+  .postal-digit:nth-child(7){left:66.70mm!important;z-index:10!important}
 
   .v-address{line-height:1.5;font-weight:400}
   .v-company{font-weight:700;line-height:1.45}
