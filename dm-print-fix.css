@@ -3,7 +3,16 @@
   @page{size:100mm 148mm;margin:0!important}
   html,body{margin:0!important;padding:0!important;width:100mm!important;background:#fff!important}
   .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important}
-  .postal{font-weight:500;letter-spacing:3.15mm}
+
+  /* Test print showed the postal code far below the postcard boxes. Move it up
+     and slightly open the pitch so the 7 digits sit closer to the standard frame. */
+  .postal{
+    font-weight:500;
+    letter-spacing:4.0mm!important;
+    transform:translateY(-18mm)!important;
+    transform-origin:left top;
+  }
+
   .v-address{line-height:1.5;font-weight:400}
   .v-company{font-weight:700;line-height:1.45}
   .v-recipient{font-weight:600;line-height:1.45}
