@@ -1,0 +1,10 @@
+/* DM postcard print tuning: Japanese postcard address layout */
+@media print{
+  @page{size:100mm 148mm;margin:0!important}
+  html,body{margin:0!important;padding:0!important;width:100mm!important;background:#fff!important}
+  .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important}
+  .postal{font-weight:500;letter-spacing:3.15mm}
+  .v-address{line-height:1.5;font-weight:400}
+  .v-company{font-weight:700;line-height:1.45}
+  .v-recipient{font-weight:600;line-height:1.45}
+}
