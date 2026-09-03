@@ -6,8 +6,8 @@
 
   /* Postal code: the seven measured values below are the actual CENTER
      positions of the postcard's red frames, measured from the left edge.
-     Remove legacy parent X offsets/spacing/transforms so nothing can alter
-     the horizontal frame mapping. */
+     Horizontal legacy offsets/spacing are disabled, while the established
+     vertical print offset is preserved. */
   .postcard .postal{
     display:block!important;
     position:absolute!important;
@@ -23,7 +23,8 @@
     overflow:visible!important;
     clip:auto!important;
     clip-path:none!important;
-    transform:none!important;
+    transform:translateY(-18mm)!important;
+    transform-origin:left top!important;
   }
   .postcard .postal-digit{
     position:absolute!important;
