@@ -4,14 +4,13 @@
   html,body{margin:0!important;padding:0!important;width:100mm!important;background:#fff!important;overflow:visible!important}
   .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important;overflow:visible!important}
 
-  /* Postal code: fixed box centers. Keep digits 1-4 exactly where they are.
-     Starting from digit 4, widen only the 4-5, 5-6 and 6-7 gaps progressively.
-     This preserves digit 4 while moving digits 5-7 right toward their red-box
-     centers. Digit 7 remains an independent element with visible overflow. */
+  /* Postal code: digits 1-4 stay fixed. Based on the latest physical print,
+     move only digits 5, 6 and 7 progressively to the right so each sits
+     nearer the center of its printed red box. */
   .postal{
     display:block!important;
     position:relative!important;
-    width:66mm!important;
+    width:68mm!important;
     height:7mm!important;
     font-weight:500;
     letter-spacing:0!important;
@@ -38,9 +37,9 @@
   .postal-digit:nth-child(2){left:7.45mm!important}
   .postal-digit:nth-child(3){left:14.90mm!important}
   .postal-digit:nth-child(4){left:34.10mm!important}
-  .postal-digit:nth-child(5){left:42.30mm!important}
-  .postal-digit:nth-child(6){left:50.50mm!important}
-  .postal-digit:nth-child(7){left:58.70mm!important}
+  .postal-digit:nth-child(5){left:43.30mm!important}
+  .postal-digit:nth-child(6){left:52.50mm!important}
+  .postal-digit:nth-child(7){left:61.70mm!important}
 
   .v-address{line-height:1.5;font-weight:400}
   .v-company{font-weight:700;line-height:1.45}
