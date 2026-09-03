@@ -5,7 +5,7 @@
   .postcard{margin:0!important;padding:0!important;width:100mm!important;height:148mm!important;overflow:visible!important}
 
   /* Postal code horizontal centers are locked to the measured red frames.
-     Vertical placement is 0.2mm lower than the previous proven print calibration. */
+     Vertical placement is 0.4mm lower than the earlier proven print calibration. */
   .postcard .postal{
     display:block!important;
     position:absolute!important;
@@ -22,7 +22,7 @@
     overflow:visible!important;
     clip:auto!important;
     clip-path:none!important;
-    transform:translateY(-21.0mm)!important;
+    transform:translateY(-20.8mm)!important;
     transform-origin:left top!important;
   }
   .postcard .postal-digit{
