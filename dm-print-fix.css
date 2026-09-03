@@ -2,46 +2,40 @@
 @media print{
   @page{size:100mm 148mm;margin:0!important}
   html,body{margin:0!important;padding:0!important;width:100mm!important;background:#fff!important}
-  .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important;overflow:visible!important}
+  .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important}
 
-  /* Postal code: seven independent fixed coordinates. */
+  /* Postal code calibrated from actual print samples.
+     Digits 1-6 stay fixed; digit 7 is individually centered in the final box. */
   .postal{
-    display:block!important;
-    position:absolute!important;
-    width:64mm!important;
-    height:8mm!important;
-    overflow:visible!important;
+    display:flex!important;
+    align-items:center;
+    width:57.8mm;
+    height:7mm;
     font-weight:500;
     letter-spacing:0!important;
-    white-space:nowrap!important;
-    /* Move all seven digits another 5mm right (5.5mm total from original baseline). */
-    transform:translate(3.5mm,-20mm)!important;
+    white-space:normal!important;
+    transform:translateY(-18mm)!important;
     transform-origin:left top;
   }
   .postal-digit{
-    position:absolute!important;
-    top:0!important;
-    width:7.45mm!important;
-    height:8mm!important;
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    text-align:center!important;
-    line-height:1!important;
+    flex:0 0 7.45mm;
+    width:7.45mm;
+    height:7mm;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    line-height:1;
     font-variant-numeric:tabular-nums;
-    margin:0!important;
-    padding:0!important;
-    overflow:visible!important;
+    position:relative;
   }
-
-  /* Individual digit spacing remains unchanged. */
-  .postal-digit:nth-child(1){left:0mm!important}
-  .postal-digit:nth-child(2){left:7.45mm!important}
-  .postal-digit:nth-child(3){left:14.90mm!important}
-  .postal-digit:nth-child(4){left:32.45mm!important}
-  .postal-digit:nth-child(5){left:39.90mm!important}
-  .postal-digit:nth-child(6){left:47.35mm!important}
-  .postal-digit:nth-child(7){left:54.80mm!important}
+  .postal-digit:nth-child(1){left:-0.55mm}
+  .postal-digit:nth-child(2){left:-0.20mm}
+  .postal-digit:nth-child(3){left:-0.10mm;margin-right:5.65mm}
+  .postal-digit:nth-child(4){left:-0.20mm}
+  .postal-digit:nth-child(5){left:-0.25mm}
+  .postal-digit:nth-child(6){left:1.95mm}
+  .postal-digit:nth-child(7){left:1.75mm}
 
   .v-address{line-height:1.5;font-weight:400}
   .v-company{font-weight:700;line-height:1.45}
