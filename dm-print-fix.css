@@ -4,14 +4,13 @@
   html,body{margin:0!important;padding:0!important;width:100mm!important;background:#fff!important}
   .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important}
 
-  /* Postal code calibration from the actual printed postcard.
-     Keep all 7 digits independent and use the measured box pitch.
-     The 3/4 group gap is preserved, while the 4-digit group pitch is
-     widened so digit 7 lands in the final red box at the default setting. */
+  /* Postal code calibrated from actual print samples.
+     Seven digits remain independent. Use a slightly tighter pitch than the
+     previous sample and keep the measured 3/4 group gap. */
   .postal{
     display:flex!important;
     align-items:center;
-    width:59.3mm;
+    width:57.8mm;
     height:7mm;
     font-weight:500;
     letter-spacing:0!important;
@@ -20,8 +19,8 @@
     transform-origin:left top;
   }
   .postal-digit{
-    flex:0 0 7.7mm;
-    width:7.7mm;
+    flex:0 0 7.45mm;
+    width:7.45mm;
     height:7mm;
     display:flex;
     align-items:center;
@@ -30,7 +29,7 @@
     line-height:1;
     font-variant-numeric:tabular-nums;
   }
-  .postal-digit:nth-child(3){margin-right:5.4mm}
+  .postal-digit:nth-child(3){margin-right:5.65mm}
 
   .v-address{line-height:1.5;font-weight:400}
   .v-company{font-weight:700;line-height:1.45}
