@@ -1,0 +1,31 @@
+name: Fix DM postcard layout
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-dm-postcard-layout.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tune postcard print layout
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('dm-postcard.html')
+          s=p.read_text()
+          s=s.replace('<title>DM・はがき印刷</title>', '<title>DM・はがき印刷</title>\n<link rel="stylesheet" href="./dm-print-fix.css">')
+          s=s.replace("const HISTORY_KEY='salesCrmPostcardHistoryV1',ADJUST_KEY='salesCrmPostcardAdjustV7';", "const HISTORY_KEY='salesCrmPostcardHistoryV1',ADJUST_KEY='salesCrmPostcardAdjustV8';")
+          s=s.replace("const DEFAULT_ADJUST={postal:{x:-10,y:-10,font:5.1},address:{x:10,y:0,font:5.1},company:{x:10,y:0,font:5.7},recipient:{x:10,y:0,font:5.5}};", "const DEFAULT_ADJUST={postal:{x:4,y:12,font:4.7},address:{x:0,y:0,font:4.8},company:{x:0,y:1,font:6.4},recipient:{x:10,y:2,font:5.2}};")
+          s=s.replace("<div class=\"print-note\">印刷設定で「ヘッダーとフッター」をOFFにしてください。URL・日付・時刻がはがき下部に印刷されるのを防げます。</div>", "<div class=\"print-note\">郵便番号を枠に合わせ、住所・会社名・部署名を日本のはがき向けに調整しました。印刷画面に「ヘッダーとフッター」の設定が表示される場合はOFFにしてください。</div>")
+          p.write_text(s)
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dm-postcard.html
+          git diff --cached --quiet || git commit -m 'Fix postcard postal code and address layout'
+          git push
