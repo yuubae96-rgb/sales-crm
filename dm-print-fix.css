@@ -4,9 +4,9 @@
   html,body{margin:0!important;padding:0!important;width:100mm!important;background:#fff!important;overflow:visible!important}
   .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important;overflow:visible!important}
 
-  /* Postal code: do not let flex pitch or later digits push digit 7 over
-     the 100mm page edge. Each digit has its own fixed X coordinate inside
-     a safe 54mm-wide postal area. The 3/4 group gap is preserved. */
+  /* Postal code: fixed box centers. The last four digits use exactly the
+     same 7.45mm pitch and the whole 4-digit group is shifted left so digit
+     7 stays safely inside the 100mm postcard instead of being clipped. */
   .postal{
     display:block!important;
     position:relative!important;
@@ -36,10 +36,10 @@
   .postal-digit:nth-child(1){left:0mm!important}
   .postal-digit:nth-child(2){left:7.45mm!important}
   .postal-digit:nth-child(3){left:14.90mm!important}
-  .postal-digit:nth-child(4){left:27.50mm!important}
-  .postal-digit:nth-child(5){left:34.95mm!important}
-  .postal-digit:nth-child(6){left:42.40mm!important}
-  .postal-digit:nth-child(7){left:47.00mm!important}
+  .postal-digit:nth-child(4){left:26.65mm!important}
+  .postal-digit:nth-child(5){left:34.10mm!important}
+  .postal-digit:nth-child(6){left:41.55mm!important}
+  .postal-digit:nth-child(7){left:49.00mm!important}
 
   .v-address{line-height:1.5;font-weight:400}
   .v-company{font-weight:700;line-height:1.45}
