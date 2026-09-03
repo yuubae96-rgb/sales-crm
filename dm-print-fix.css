@@ -4,10 +4,8 @@
   html,body{margin:0!important;padding:0!important;width:100mm!important;background:#fff!important;overflow:visible!important}
   .postcard{margin:0!important;padding:0!important;width:100mm!important;height:148mm!important;overflow:visible!important}
 
-  /* Postal code: the seven measured values below are the actual CENTER
-     positions of the postcard's red frames, measured from the left edge.
-     Horizontal legacy offsets/spacing are disabled, while the established
-     vertical print offset is preserved. */
+  /* Postal code horizontal centers are locked to the measured red frames.
+     Vertical placement is restored to the earlier proven print calibration. */
   .postcard .postal{
     display:block!important;
     position:absolute!important;
@@ -16,21 +14,22 @@
     margin:0!important;
     padding:0!important;
     width:100mm!important;
-    height:7mm!important;
+    height:8mm!important;
+    font-weight:500!important;
     letter-spacing:0!important;
     word-spacing:0!important;
     white-space:normal!important;
     overflow:visible!important;
     clip:auto!important;
     clip-path:none!important;
-    transform:translateY(-18mm)!important;
+    transform:translateY(-21.2mm)!important;
     transform-origin:left top!important;
   }
   .postcard .postal-digit{
     position:absolute!important;
     top:0!important;
     width:7mm!important;
-    height:7mm!important;
+    height:8mm!important;
     margin:0!important;
     padding:0!important;
     display:flex!important;
@@ -45,7 +44,7 @@
     clip:auto!important;
     clip-path:none!important;
   }
-  /* 7mm digit box => left = measured frame center - 3.5mm */
+  /* Fixed frame centers: 47 / 54.5 / 62 / 69.8 / 77.3 / 84.8 / 92.3mm */
   .postcard .postal-digit:nth-child(1){left:43.50mm!important}
   .postcard .postal-digit:nth-child(2){left:51.00mm!important}
   .postcard .postal-digit:nth-child(3){left:58.50mm!important}
@@ -54,6 +53,7 @@
   .postcard .postal-digit:nth-child(6){left:81.30mm!important}
   .postcard .postal-digit:nth-child(7){left:88.80mm!important}
 
+  /* Keep the established address/name spacing unchanged. */
   .v-address{line-height:1.5;font-weight:400}
   .v-company{font-weight:700;line-height:1.45}
   .v-recipient{font-weight:600;line-height:1.45}
