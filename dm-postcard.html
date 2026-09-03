@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DM・はがき印刷</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Yu Gothic","Hiragino Kaku Gothic ProN",sans-serif;background:#f5f5f5;color:#222}header{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid #ddd;padding:16px 18px;font-size:22px;font-weight:800}.wrap{max-width:980px;margin:auto;padding:16px}.card{background:#fff;border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:0 2px 8px #0001}h2,h3{margin:0 0 12px}.muted{font-size:13px;color:#666;line-height:1.6}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.toolbar>*{flex:1;min-width:150px}label{display:block;font-weight:700;margin:10px 0 5px}input,select{width:100%;padding:11px;border:1px solid #ccc;border-radius:10px;font-size:16px;background:#fff}button{border:0;border-radius:11px;padding:12px 14px;font-size:16px;font-weight:800;cursor:pointer}.primary{background:#111;color:#fff}.secondary{background:#e9e9e9;color:#111}.danger{background:#fff0f0;color:#a00}.small{width:auto;padding:9px 11px;font-size:14px}.summary{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}.pill{background:#f0f0f0;border-radius:999px;padding:7px 10px;font-size:13px;font-weight:700}.company-row{display:grid;grid-template-columns:34px 1.3fr 1.5fr 1fr;gap:10px;align-items:start;padding:12px 0;border-bottom:1px solid #eee}.company-row input[type=checkbox]{width:20px;height:20px;margin-top:8px}.company-name{font-weight:800;line-height:1.45}.address{font-size:14px;line-height:1.55;color:#444}.no-address{color:#b00020;font-weight:700}.recipient-select{font-size:14px;padding:9px}.history{font-size:12px;color:#666;margin-top:4px}.preview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.mini-postcard{aspect-ratio:100/148;background:#fff;border:1px solid #bbb;border-radius:6px;position:relative;overflow:hidden;padding:12px}.mini-postal{position:absolute;top:13px;right:24px;font-size:12px;letter-spacing:3px}.mini-address{position:absolute;right:24px;top:42px;height:68%;writing-mode:vertical-rl;font-size:12px;line-height:1.7}.mini-name{position:absolute;right:94px;top:50px;height:62%;writing-mode:vertical-rl;font-size:14px;font-weight:800;line-height:1.8}.back{display:inline-block;margin-bottom:10px;color:#111;font-weight:700;text-decoration:none}.print-area{display:none}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.company-row{grid-template-columns:30px 1fr}.company-row>.address,.company-row>.recipient-box{grid-column:2}}
+@media print{
+  @page{size:100mm 148mm;margin:0}
+  body{background:#fff}.no-print{display:none!important}.print-area{display:block}.postcard{width:100mm;height:148mm;page-break-after:always;break-after:page;position:relative;overflow:hidden;background:#fff}.postcard:last-child{page-break-after:auto;break-after:auto}.postal{position:absolute;top:13mm;right:17mm;font-family:"Yu Gothic",sans-serif;font-size:4.5mm;letter-spacing:3.15mm;white-space:nowrap}.v-address{position:absolute;top:35mm;right:15mm;height:91mm;writing-mode:vertical-rl;text-orientation:mixed;font-family:"Yu Mincho","Hiragino Mincho ProN",serif;font-size:4.1mm;line-height:1.75;letter-spacing:.2mm}.v-company{position:absolute;top:39mm;right:47mm;height:88mm;writing-mode:vertical-rl;text-orientation:mixed;font-family:"Yu Mincho","Hiragino Mincho ProN",serif;font-size:5mm;font-weight:700;line-height:1.7;letter-spacing:.25mm}.v-recipient{position:absolute;top:48mm;right:67mm;height:75mm;writing-mode:vertical-rl;text-orientation:mixed;font-family:"Yu Mincho","Hiragino Mincho ProN",serif;font-size:6mm;font-weight:700;line-height:1.7;letter-spacing:.3mm}.print-tag{display:none}
+}
+</style>
+</head>
+<body>
+<header class="no-print">DM・はがき印刷</header>
+<div class="wrap no-print">
+<a class="back" href="./index.html">← 営業管理へ戻る</a>
+<div class="card">
+<h2>送付する会社を選ぶ</h2>
+<div class="grid">
+<div><label>用途</label><select id="campaign"><option>暑中見舞い</option><option>残暑見舞い</option><option>寒中見舞い</option><option>年賀状</option><option>展示会案内</option><option>価格改定案内</option><option>その他案内</option></select></div>
+<div><label>取引先区分</label><select id="relationship"><option>すべて</option><option selected>顧客</option><option>材料メーカー</option><option>外注先</option><option>設備会社</option><option>その他</option></select></div>
+</div>
+<label>会社を検索</label><input id="search" type="search" placeholder="会社名・住所で検索">
+<div class="summary"><span class="pill" id="totalCount">0社</span><span class="pill" id="selectedCount">0社選択</span><span class="pill" id="missingCount">住所未登録 0社</span></div>
+<div class="toolbar"><button class="secondary" id="selectAll">表示中をすべて選択</button><button class="secondary" id="clearAll">選択解除</button><button class="secondary" id="selectLastYear">前年同用途の送付先を選択</button></div>
+</div>
+<div class="card">
+<h2>宛名</h2>
+<p class="muted">会社宛は「御中」、担当者宛は登録人物から選べます。住所がない会社は印刷対象にできません。</p>
+<div id="companyList"><p class="muted">会社一覧を読み込み中です…</p></div>
+</div>
+<div class="card">
+<h2>印刷前プレビュー</h2>
+<p class="muted">日本郵便はがき 100×148mm の宛名面を想定しています。実際の印刷時はプリンター側でも用紙サイズを「はがき」、倍率を100%にしてください。</p>
+<div class="toolbar"><button class="secondary" id="refreshPreview">プレビュー更新</button><button class="primary" id="printButton">選択したはがきを印刷</button></div>
+<div id="preview" class="preview-grid" style="margin-top:14px"></div>
+<div class="toolbar" style="margin-top:14px"><button class="secondary" id="markPrinted">印刷済みとして記録</button><button class="danger" id="clearHistory">この端末の送付履歴を消去</button></div>
+<p class="muted">「印刷済みとして記録」は、この端末のブラウザ内に保存します。既存の会社・人物データは変更しません。</p>
+</div>
+</div>
+<div id="printArea" class="print-area"></div>
+<script>
+const U='https://emauqxftmauvsffdjvyh.supabase.co';
+const K='sb_publishable_9rgwKLiJU9dGVkqttq0-fQ_hrhNqnfa';
+const A='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtYXVxeGZ0bWF1dnNmZmRqdnloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4Njg0NzksImV4cCI6MjEwMjQ0NDQ3OX0.iN2xz71VCeP7o6nz89v0wJMrUYkGyPKATtWaCl-MIO4';
+const H={apikey:K,Authorization:`Bearer ${A}`};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
+const norm=s=>String(s||'').normalize('NFKC').replace(/\s+/g,'').toLowerCase();
+const HISTORY_KEY='salesCrmPostcardHistoryV1';
+let companies=[],contacts=[],selected=new Set(),recipientChoice=new Map();
+async function apiGet(path){const r=await fetch(U+path,{headers:H});const d=await r.json();if(!r.ok)throw Error(d?.message||`取得エラー (${r.status})`);return d}
+async function apiGetAll(path,pageSize=100){let all=[],offset=0;while(true){const sep=path.includes('?')?'&':'?';const page=await apiGet(`${path}${sep}limit=${pageSize}&offset=${offset}`);all.push(...page);if(page.length<pageSize)break;offset+=pageSize;if(offset>10000)break}return all}
+function getHistory(){try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]')}catch{return []}}
+function saveHistory(v){localStorage.setItem(HISTORY_KEY,JSON.stringify(v))}
+function postalParts(raw){const text=String(raw||'').trim();const m=text.match(/(?:〒\s*)?(\d{3})[-ー‐‑‒–—−]?\s*(\d{4})/);const postal=m?m[1]+m[2]:'';let address=text;if(m)address=address.replace(m[0],'').trim();address=address.replace(/^〒\s*/,'').trim();return{postal,address}}
+function currentYear(){return new Date().getFullYear()}
+function historyFor(companyId,campaign,year=currentYear()){return getHistory().find(x=>String(x.companyId)===String(companyId)&&x.campaign===campaign&&Number(x.year)===Number(year))}
+function activeContacts(companyId){return contacts.filter(c=>String(c.company_id)===String(companyId)&&!['退職','異動'].includes(c.employment_status||'在籍'))}
+function visibleCompanies(){const rel=$('relationship').value,q=norm($('search').value);return companies.filter(c=>(rel==='すべて'||c.relationship_type===rel)&&(!q||norm(`${c.company_name} ${c.address||''}`).includes(q)))}
+function recipientFor(c){const choice=recipientChoice.get(String(c.id))||'company';if(choice==='company')return{company:c.company_name,recipient:'御中'};const person=contacts.find(x=>String(x.id)===String(choice));if(!person)return{company:c.company_name,recipient:'御中'};const dept=[person.department,person.position].filter(Boolean).join('　');return{company:c.company_name+(dept?`　${dept}`:''),recipient:`${person.name} 様`}}
+function rowHistory(c){const h=historyFor(c.id,$('campaign').value);return h?`今年 ${h.date} 送付済み`:''}
+function render(){const list=visibleCompanies();$('totalCount').textContent=`${list.length}社`;$('selectedCount').textContent=`${selected.size}社選択`;$('missingCount').textContent=`住所未登録 ${list.filter(c=>!String(c.address||'').trim()).length}社`;$('companyList').innerHTML=list.map(c=>{const people=activeContacts(c.id),hasAddress=!!String(c.address||'').trim();const opts=[`<option value="company">${esc(c.company_name)} 御中</option>`,...people.map(p=>`<option value="${esc(p.id)}">${esc([p.name,p.department,p.position].filter(Boolean).join(' / '))} 様</option>`)].join('');return `<div class="company-row"><input type="checkbox" data-select="${esc(c.id)}" ${selected.has(String(c.id))?'checked':''} ${hasAddress?'':'disabled'}><div><div class="company-name">${esc(c.company_name)}</div><div class="history">${esc(rowHistory(c))}</div></div><div class="address ${hasAddress?'':'no-address'}">${esc(c.address||'住所未登録')}</div><div class="recipient-box"><select class="recipient-select" data-recipient="${esc(c.id)}">${opts}</select></div></div>`}).join('')||'<p class="muted">該当する会社はありません。</p>';
+document.querySelectorAll('[data-select]').forEach(el=>el.onchange=()=>{const id=String(el.dataset.select);if(el.checked)selected.add(id);else selected.delete(id);renderCounts();renderPreview()});document.querySelectorAll('[data-recipient]').forEach(el=>{const id=String(el.dataset.recipient);el.value=recipientChoice.get(id)||'company';el.onchange=()=>{recipientChoice.set(id,el.value);renderPreview()}});renderCounts();renderPreview()}
+function renderCounts(){$('selectedCount').textContent=`${selected.size}社選択`}
+function selectedCompanies(){return companies.filter(c=>selected.has(String(c.id))&&String(c.address||'').trim())}
+function miniCard(c){const p=postalParts(c.address),r=recipientFor(c);return `<div class="mini-postcard"><div class="mini-postal">${esc(p.postal)}</div><div class="mini-address">${esc(p.address)}</div><div class="mini-name">${esc(r.company)}<br>${esc(r.recipient)}</div></div>`}
+function printCard(c){const p=postalParts(c.address),r=recipientFor(c);return `<section class="postcard"><div class="postal">${esc(p.postal)}</div><div class="v-address">${esc(p.address)}</div><div class="v-company">${esc(r.company)}</div><div class="v-recipient">${esc(r.recipient)}</div></section>`}
+function renderPreview(){const a=selectedCompanies();$('preview').innerHTML=a.length?a.slice(0,12).map(miniCard).join(''):'<p class="muted">印刷する会社を選択してください。</p>';$('printArea').innerHTML=a.map(printCard).join('')}
+$('relationship').onchange=render;$('search').oninput=render;$('campaign').onchange=render;
+$('selectAll').onclick=()=>{visibleCompanies().filter(c=>String(c.address||'').trim()).forEach(c=>selected.add(String(c.id)));render()};
+$('clearAll').onclick=()=>{selected.clear();render()};
+$('selectLastYear').onclick=()=>{const campaign=$('campaign').value,year=currentYear()-1,ids=new Set(getHistory().filter(x=>x.campaign===campaign&&Number(x.year)===year).map(x=>String(x.companyId)));selected=new Set(companies.filter(c=>ids.has(String(c.id))&&String(c.address||'').trim()).map(c=>String(c.id)));render();if(!selected.size)alert(`${year}年の「${campaign}」送付履歴はこの端末にありません。`)};
+$('refreshPreview').onclick=renderPreview;
+$('printButton').onclick=()=>{const a=selectedCompanies();if(!a.length)return alert('印刷する会社を選択してください。');renderPreview();window.print()};
+$('markPrinted').onclick=()=>{const a=selectedCompanies();if(!a.length)return alert('記録する会社を選択してください。');const campaign=$('campaign').value,year=currentYear(),date=new Date().toLocaleDateString('ja-JP'),history=getHistory().filter(x=>!(x.campaign===campaign&&Number(x.year)===year&&selected.has(String(x.companyId))));for(const c of a){const r=recipientFor(c);history.push({companyId:String(c.id),companyName:c.company_name,campaign,year,date,recipient:r.recipient})}saveHistory(history);alert(`${a.length}社を「${campaign}」送付済みとして記録しました。`);render()};
+$('clearHistory').onclick=()=>{if(confirm('この端末に保存したDM・はがき送付履歴をすべて消しますか？')){localStorage.removeItem(HISTORY_KEY);render()}};
+(async()=>{try{[companies,contacts]=await Promise.all([apiGetAll('/rest/v1/companies?select=id,company_name,address,relationship_type&order=company_name.asc'),apiGetAll('/rest/v1/contacts?select=id,company_id,name,department,position,employment_status&order=name.asc')]);render()}catch(e){$('companyList').innerHTML=`<p class="no-address">読み込みに失敗しました：${esc(e.message)}</p>`}})();
+</script>
+</body>
+</html>
