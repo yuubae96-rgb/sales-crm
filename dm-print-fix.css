@@ -4,41 +4,41 @@
   html,body{margin:0!important;padding:0!important;width:100mm!important;background:#fff!important}
   .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important;overflow:visible!important}
 
-  /* Postal code calibrated from actual print samples.
-     Keep all seven digits safely inside the postcard print bounds. */
+  /* Postal code: each digit is independently centered on the seven printed boxes.
+     Do not use per-digit left offsets; those accumulated and caused 806-0004 to drift. */
   .postal{
     display:flex!important;
-    align-items:center;
-    width:62mm;
-    height:7mm;
+    align-items:center!important;
+    width:auto!important;
+    height:8mm!important;
     overflow:visible!important;
     font-weight:500;
     letter-spacing:0!important;
-    white-space:normal!important;
+    white-space:nowrap!important;
     transform:translate(-2mm,-20mm)!important;
     transform-origin:left top;
   }
   .postal-digit{
-    flex:0 0 7.45mm;
-    width:7.45mm;
-    height:7mm;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    line-height:1;
+    flex:0 0 7.45mm!important;
+    width:7.45mm!important;
+    min-width:7.45mm!important;
+    max-width:7.45mm!important;
+    height:8mm!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+    line-height:1!important;
     font-variant-numeric:tabular-nums;
-    position:relative;
+    position:relative!important;
+    left:auto!important;
+    right:auto!important;
+    margin:0!important;
+    padding:0!important;
     overflow:visible!important;
   }
-  .postal-digit:nth-child(1){left:-0.55mm}
-  .postal-digit:nth-child(2){left:-0.20mm}
-  .postal-digit:nth-child(3){left:-0.10mm;margin-right:5.65mm}
-  .postal-digit:nth-child(4){left:-0.20mm}
-  .postal-digit:nth-child(5){left:-0.25mm}
-  .postal-digit:nth-child(6){left:2.45mm}
-  /* Actual print showed digit 7 one full box too far left. Move only digit 7 right. */
-  .postal-digit:nth-child(7){left:7.45mm}
+  /* Japanese postcard has a larger gap between the 3rd and 4th postal boxes. */
+  .postal-digit:nth-child(3){margin-right:5.65mm!important}
 
   .v-address{line-height:1.5;font-weight:400}
   .v-company{font-weight:700;line-height:1.45}
