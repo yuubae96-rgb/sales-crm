@@ -4,13 +4,13 @@
   html,body{margin:0!important;padding:0!important;width:100mm!important;background:#fff!important;overflow:visible!important}
   .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important;overflow:visible!important}
 
-  /* Postal code: fixed box centers. The last four digits use exactly the
-     same 7.45mm pitch and the whole 4-digit group is shifted left so digit
-     7 stays safely inside the 100mm postcard instead of being clipped. */
+  /* Postal code: fixed box centers. Keep digits 1-3 unchanged. The last
+     four digits remain at the same 7.45mm pitch and are shifted together
+     one full box to the right to match the printed red boxes. */
   .postal{
     display:block!important;
     position:relative!important;
-    width:54mm!important;
+    width:62mm!important;
     height:7mm!important;
     font-weight:500;
     letter-spacing:0!important;
@@ -36,10 +36,10 @@
   .postal-digit:nth-child(1){left:0mm!important}
   .postal-digit:nth-child(2){left:7.45mm!important}
   .postal-digit:nth-child(3){left:14.90mm!important}
-  .postal-digit:nth-child(4){left:26.65mm!important}
-  .postal-digit:nth-child(5){left:34.10mm!important}
-  .postal-digit:nth-child(6){left:41.55mm!important}
-  .postal-digit:nth-child(7){left:49.00mm!important}
+  .postal-digit:nth-child(4){left:34.10mm!important}
+  .postal-digit:nth-child(5){left:41.55mm!important}
+  .postal-digit:nth-child(6){left:49.00mm!important}
+  .postal-digit:nth-child(7){left:56.45mm!important}
 
   .v-address{line-height:1.5;font-weight:400}
   .v-company{font-weight:700;line-height:1.45}
