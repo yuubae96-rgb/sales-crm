@@ -25,8 +25,8 @@
 <script>
 const U='https://emauqxftmauvsffdjvyh.supabase.co',K='sb_publishable_9rgwKLiJU9dGVkqttq0-fQ_hrhNqnfa',A='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtYXVxeGZ0bWF1dnNmZmRqdnloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4Njg0NzksImV4cCI6MjEwMjQ0NDQ3OX0.iN2xz71VCeP7o6nz89v0wJMrUYkGyPKATtWaCl-MIO4',H={apikey:K,Authorization:`Bearer ${A}`};
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;'),norm=s=>String(s||'').normalize('NFKC').replace(/\s+/g,'').toLowerCase();
-const HISTORY_KEY='salesCrmPostcardHistoryV1',ADJUST_KEY='salesCrmPostcardAdjustV5';let companies=[],contacts=[],selected=new Set(),recipientChoice=new Map();
-const DEFAULT_ADJUST={postal:{x:5,y:-10,font:5.1},address:{x:10,y:0,font:5.1},company:{x:10,y:0,font:5.7},recipient:{x:10,y:0,font:5.5}};let adjust=loadAdjust();
+const HISTORY_KEY='salesCrmPostcardHistoryV1',ADJUST_KEY='salesCrmPostcardAdjustV6';let companies=[],contacts=[],selected=new Set(),recipientChoice=new Map();
+const DEFAULT_ADJUST={postal:{x:0,y:-10,font:5.1},address:{x:10,y:0,font:5.1},company:{x:10,y:0,font:5.7},recipient:{x:10,y:0,font:5.5}};let adjust=loadAdjust();
 const BACK_TEMPLATES={
 '暑中見舞い':`暑中お見舞い申し上げます\n\n平素は格別のお引き立てを賜り、厚く御礼申し上げます。\n厳しい暑さが続いておりますが、皆様のご健勝を心よりお祈り申し上げます。\n\nネームプレート（ＮＰ）、銘板、ラベル等の在庫切れや追加のご予定がございましたら、ぜひご発注くださいますようお願い申し上げます。\n\n今後とも変わらぬご愛顧のほど、よろしくお願い申し上げます。`,
 '残暑見舞い':`残暑お見舞い申し上げます\n\n平素は格別のお引き立てを賜り、厚く御礼申し上げます。\n暦の上では秋とはいえ、なお厳しい暑さが続いております。皆様のご健勝を心よりお祈り申し上げます。\n\nネームプレート（ＮＰ）、銘板、ラベル等の在庫切れや追加のご予定がございましたら、ぜひご発注くださいますようお願い申し上げます。\n\n今後とも変わらぬご愛顧のほど、よろしくお願い申し上げます。`,
