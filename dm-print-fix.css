@@ -4,17 +4,18 @@
   html,body{margin:0!important;padding:0!important;width:100mm!important;background:#fff!important}
   .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important}
 
-  /* Postal code calibrated from actual print samples. */
+  /* Postal code calibrated from actual print samples.
+     Keep all seven digits safely inside the postcard print bounds. */
   .postal{
     display:flex!important;
     align-items:center;
-    width:64mm;
+    width:62mm;
     height:7mm;
     overflow:visible!important;
     font-weight:500;
     letter-spacing:0!important;
     white-space:normal!important;
-    transform:translateY(-19.5mm)!important;
+    transform:translate(-2mm,-19.5mm)!important;
     transform-origin:left top;
   }
   .postal-digit{
