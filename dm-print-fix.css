@@ -14,7 +14,8 @@
     font-weight:500;
     letter-spacing:0!important;
     white-space:nowrap!important;
-    transform:translate(-2mm,-20mm)!important;
+    /* Default position: move all seven digits 0.5mm right. */
+    transform:translate(-1.5mm,-20mm)!important;
     transform-origin:left top;
   }
   .postal-digit{
@@ -33,7 +34,7 @@
     overflow:visible!important;
   }
 
-  /* 1-3 stay unchanged. 4-7 are shifted exactly one box (7.45mm) right. */
+  /* 1-3 stay unchanged. 4-7 remain one box right. */
   .postal-digit:nth-child(1){left:0mm!important}
   .postal-digit:nth-child(2){left:7.45mm!important}
   .postal-digit:nth-child(3){left:14.90mm!important}
