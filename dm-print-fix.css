@@ -1,18 +1,17 @@
 /* DM postcard print tuning: Japanese postcard address layout */
 @media print{
   @page{size:100mm 148mm;margin:0!important}
-  html,body{margin:0!important;padding:0!important;width:100mm!important;background:#fff!important}
+  html,body{margin:0!important;padding:0!important;width:100mm!important;background:#fff!important;overflow:visible!important}
   .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important;overflow:visible!important}
 
-  /* Postal code calibrated from actual print samples.
-     The former layout placed the 7th digit's center almost exactly on the
-     100mm page edge, so the printer/browser clipped the right half of it.
-     Keep digits 1-6 unchanged and pull only digit 7 safely inside the page. */
+  /* Postal code: do not let flex pitch or later digits push digit 7 over
+     the 100mm page edge. Each digit has its own fixed X coordinate inside
+     a safe 54mm-wide postal area. The 3/4 group gap is preserved. */
   .postal{
-    display:flex!important;
-    align-items:center;
-    width:57.8mm;
-    height:7mm;
+    display:block!important;
+    position:relative!important;
+    width:54mm!important;
+    height:7mm!important;
     font-weight:500;
     letter-spacing:0!important;
     white-space:normal!important;
@@ -21,25 +20,26 @@
     transform-origin:left top;
   }
   .postal-digit{
-    flex:0 0 7.45mm;
-    width:7.45mm;
-    height:7mm;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    line-height:1;
+    position:absolute!important;
+    top:0!important;
+    width:7mm!important;
+    height:7mm!important;
+    margin:0!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+    line-height:1!important;
     font-variant-numeric:tabular-nums;
-    position:relative;
     overflow:visible!important;
   }
-  .postal-digit:nth-child(1){left:-0.55mm}
-  .postal-digit:nth-child(2){left:-0.20mm}
-  .postal-digit:nth-child(3){left:-0.10mm;margin-right:5.65mm}
-  .postal-digit:nth-child(4){left:-0.20mm}
-  .postal-digit:nth-child(5){left:-0.25mm}
-  .postal-digit:nth-child(6){left:1.95mm}
-  .postal-digit:nth-child(7){left:-0.75mm}
+  .postal-digit:nth-child(1){left:0mm!important}
+  .postal-digit:nth-child(2){left:7.45mm!important}
+  .postal-digit:nth-child(3){left:14.90mm!important}
+  .postal-digit:nth-child(4){left:27.50mm!important}
+  .postal-digit:nth-child(5){left:34.95mm!important}
+  .postal-digit:nth-child(6){left:42.40mm!important}
+  .postal-digit:nth-child(7){left:47.00mm!important}
 
   .v-address{line-height:1.5;font-weight:400}
   .v-company{font-weight:700;line-height:1.45}
