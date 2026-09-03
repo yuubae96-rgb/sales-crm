@@ -4,9 +4,9 @@
   html,body{margin:0!important;padding:0!important;width:100mm!important;background:#fff!important}
   .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important}
 
-  /* Postal code calibrated from actual print samples.
-     Seven digits remain independent. Use a slightly tighter pitch than the
-     previous sample and keep the measured 3/4 group gap. */
+  /* Postal code calibrated from actual print sample #4.
+     Keep the successful overall pitch/group gap and center each digit
+     individually inside its printed red box. */
   .postal{
     display:flex!important;
     align-items:center;
@@ -28,8 +28,15 @@
     text-align:center;
     line-height:1;
     font-variant-numeric:tabular-nums;
+    position:relative;
   }
-  .postal-digit:nth-child(3){margin-right:5.65mm}
+  .postal-digit:nth-child(1){left:-0.55mm}
+  .postal-digit:nth-child(2){left:-0.20mm}
+  .postal-digit:nth-child(3){left:-0.10mm;margin-right:5.65mm}
+  .postal-digit:nth-child(4){left:-0.20mm}
+  .postal-digit:nth-child(5){left:-0.25mm}
+  .postal-digit:nth-child(6){left:-0.45mm}
+  .postal-digit:nth-child(7){left:-0.75mm}
 
   .v-address{line-height:1.5;font-weight:400}
   .v-company{font-weight:700;line-height:1.45}
