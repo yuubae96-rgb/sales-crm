@@ -2,7 +2,7 @@
 @media print{
   @page{size:100mm 148mm;margin:0!important}
   html,body{margin:0!important;padding:0!important;width:100mm!important;background:#fff!important}
-  .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important}
+  .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important;overflow:visible!important}
 
   /* Postal code calibrated from actual print samples.
      Keep all seven digits safely inside the postcard print bounds. */
@@ -37,7 +37,7 @@
   .postal-digit:nth-child(4){left:-0.20mm}
   .postal-digit:nth-child(5){left:-0.25mm}
   .postal-digit:nth-child(6){left:2.45mm}
-  .postal-digit:nth-child(7){left:3.00mm}
+  .postal-digit:nth-child(7){left:1.50mm}
 
   .v-address{line-height:1.5;font-weight:400}
   .v-company{font-weight:700;line-height:1.45}
