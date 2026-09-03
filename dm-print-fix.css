@@ -4,12 +4,13 @@
   html,body{margin:0!important;padding:0!important;width:100mm!important;background:#fff!important;overflow:visible!important}
   .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important;overflow:visible!important}
 
-  /* Postal code: use 9.20mm spacing within both digit groups.
-     Keep digit 1 and digit 4 as the group anchors. */
+  /* Postal code: keep the current 9.20mm spacing/group geometry.
+     Shift each digit's fixed coordinate exactly 5mm right instead of moving
+     the .postal parent, so the parent layout reference does not change. */
   .postal{
     display:block!important;
     position:relative!important;
-    width:68mm!important;
+    width:73mm!important;
     height:7mm!important;
     font-weight:500;
     letter-spacing:0!important;
@@ -32,13 +33,13 @@
     font-variant-numeric:tabular-nums;
     overflow:visible!important;
   }
-  .postal-digit:nth-child(1){left:0mm!important}
-  .postal-digit:nth-child(2){left:9.20mm!important}
-  .postal-digit:nth-child(3){left:18.40mm!important}
-  .postal-digit:nth-child(4){left:34.10mm!important}
-  .postal-digit:nth-child(5){left:43.30mm!important}
-  .postal-digit:nth-child(6){left:52.50mm!important}
-  .postal-digit:nth-child(7){left:61.70mm!important}
+  .postal-digit:nth-child(1){left:5.00mm!important}
+  .postal-digit:nth-child(2){left:14.20mm!important}
+  .postal-digit:nth-child(3){left:23.40mm!important}
+  .postal-digit:nth-child(4){left:39.10mm!important}
+  .postal-digit:nth-child(5){left:48.30mm!important}
+  .postal-digit:nth-child(6){left:57.50mm!important}
+  .postal-digit:nth-child(7){left:66.70mm!important}
 
   .v-address{line-height:1.5;font-weight:400}
   .v-company{font-weight:700;line-height:1.45}
