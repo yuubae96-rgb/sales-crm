@@ -4,14 +4,32 @@
   html,body{margin:0!important;padding:0!important;width:100mm!important;background:#fff!important}
   .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important}
 
-  /* Test print showed the postal code far below the postcard boxes. Move it up
-     and slightly open the pitch so the 7 digits sit closer to the standard frame. */
+  /* Postal code: render each digit independently instead of relying on
+     letter-spacing. This keeps every digit centered in its own postal box
+     and adds the wider 3-digit / 4-digit group gap explicitly. */
   .postal{
+    display:flex!important;
+    align-items:center;
+    width:44.1mm;
+    height:7mm;
     font-weight:500;
-    letter-spacing:4.0mm!important;
+    letter-spacing:0!important;
+    white-space:normal!important;
     transform:translateY(-18mm)!important;
     transform-origin:left top;
   }
+  .postal-digit{
+    flex:0 0 5.9mm;
+    width:5.9mm;
+    height:7mm;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    line-height:1;
+    font-variant-numeric:tabular-nums;
+  }
+  .postal-digit:nth-child(3){margin-right:2.8mm}
 
   .v-address{line-height:1.5;font-weight:400}
   .v-company{font-weight:700;line-height:1.45}
