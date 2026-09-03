@@ -4,8 +4,8 @@
   html,body{margin:0!important;padding:0!important;width:100mm!important;background:#fff!important}
   .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important;overflow:visible!important}
 
-  /* Postal code: each digit is independently centered on the seven printed boxes.
-     Do not use per-digit left offsets; those accumulated and caused 806-0004 to drift. */
+  /* Postal code calibrated from the 2026-09-03 actual print.
+     Seven digits are kept independent; each digit receives only its own fine correction. */
   .postal{
     display:flex!important;
     align-items:center!important;
@@ -31,14 +31,22 @@
     line-height:1!important;
     font-variant-numeric:tabular-nums;
     position:relative!important;
-    left:auto!important;
-    right:auto!important;
     margin:0!important;
     padding:0!important;
     overflow:visible!important;
   }
-  /* Japanese postcard has a larger gap between the 3rd and 4th postal boxes. */
+  /* Gap after the first three boxes on a Japanese postcard. */
   .postal-digit:nth-child(3){margin-right:5.65mm!important}
+
+  /* Fine calibration against the photographed red-box centres.
+     Inline user adjustments remain available through transform. */
+  .postal-digit:nth-child(1){left:0mm!important}
+  .postal-digit:nth-child(2){left:0.4mm!important}
+  .postal-digit:nth-child(3){left:0.8mm!important}
+  .postal-digit:nth-child(4){left:0.2mm!important}
+  .postal-digit:nth-child(5){left:0.7mm!important}
+  .postal-digit:nth-child(6){left:1.3mm!important}
+  .postal-digit:nth-child(7){left:1.8mm!important}
 
   .v-address{line-height:1.5;font-weight:400}
   .v-company{font-weight:700;line-height:1.45}
