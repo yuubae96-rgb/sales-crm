@@ -4,12 +4,13 @@
   html,body{margin:0!important;padding:0!important;width:100mm!important;background:#fff!important;overflow:visible!important}
   .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important;overflow:visible!important}
 
-  /* Postal code: keep digits 1-6 fixed. Digit 7 is 2.5mm right of the last
-     visible-safe position, balancing spacing with the printable page edge. */
+  /* Postal code: use page-based fixed X positions so the parent offset is not
+     added a second time. This keeps all seven digits inside the 100mm page. */
   .postal{
     display:block!important;
     position:relative!important;
-    width:85mm!important;
+    left:0!important;
+    width:100mm!important;
     height:7mm!important;
     font-weight:500;
     letter-spacing:0!important;
@@ -36,13 +37,13 @@
     clip:auto!important;
     clip-path:none!important;
   }
-  .postal-digit:nth-child(1){left:5.00mm!important}
-  .postal-digit:nth-child(2){left:14.20mm!important}
-  .postal-digit:nth-child(3){left:23.40mm!important}
-  .postal-digit:nth-child(4){left:39.10mm!important}
-  .postal-digit:nth-child(5){left:48.30mm!important}
-  .postal-digit:nth-child(6){left:57.50mm!important}
-  .postal-digit:nth-child(7){left:64.20mm!important;z-index:10!important}
+  .postal-digit:nth-child(1){left:45.00mm!important}
+  .postal-digit:nth-child(2){left:52.50mm!important}
+  .postal-digit:nth-child(3){left:60.00mm!important}
+  .postal-digit:nth-child(4){left:69.80mm!important}
+  .postal-digit:nth-child(5){left:77.30mm!important}
+  .postal-digit:nth-child(6){left:84.80mm!important}
+  .postal-digit:nth-child(7){left:92.30mm!important;z-index:10!important}
 
   .v-address{line-height:1.5;font-weight:400}
   .v-company{font-weight:700;line-height:1.45}
