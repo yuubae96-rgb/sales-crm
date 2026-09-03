@@ -5,8 +5,7 @@
   .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important}
 
   /* Postal code calibrated from actual print samples.
-     Keep digits 1-5 fixed; move digits 6-7 independently to the centers
-     of their printed red boxes. */
+     Digits 1-6 stay fixed; digit 7 is individually centered in the final box. */
   .postal{
     display:flex!important;
     align-items:center;
@@ -36,7 +35,7 @@
   .postal-digit:nth-child(4){left:-0.20mm}
   .postal-digit:nth-child(5){left:-0.25mm}
   .postal-digit:nth-child(6){left:1.95mm}
-  .postal-digit:nth-child(7){left:2.50mm}
+  .postal-digit:nth-child(7){left:1.00mm}
 
   .v-address{line-height:1.5;font-weight:400}
   .v-company{font-weight:700;line-height:1.45}
