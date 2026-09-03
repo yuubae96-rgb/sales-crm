@@ -6,6 +6,14 @@
   const list=document.getElementById('contactList');
   if(!list)return;
 
+  const companyCard=document.getElementById('companyListButton')?.closest('.card');
+  if(companyCard&&!document.getElementById('dmPostcardButton')){
+    const dmButton=document.createElement('button');
+    dmButton.type='button';dmButton.id='dmPostcardButton';dmButton.className='secondary';dmButton.textContent='DM・はがき印刷';
+    dmButton.onclick=()=>{location.href='./dm-postcard.html'};
+    document.getElementById('companyListButton').insertAdjacentElement('afterend',dmButton);
+  }
+
   const style=document.createElement('style');
   style.textContent=`
     .person-met-date{margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
