@@ -4,10 +4,8 @@
   html,body{margin:0!important;padding:0!important;width:100mm!important;background:#fff!important;overflow:visible!important}
   .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important;overflow:visible!important}
 
-  /* Postal code: keep the current 9.20mm spacing/group geometry.
-     Current fixed coordinates are 5mm right of the original baseline.
-     Give the postal container extra width so digit 7 is not clipped by the
-     container edge in iOS/Safari print preview. */
+  /* Postal code: keep digits 1-6 fixed. Move only digit 7 left so it remains
+     inside the printable page area in iOS/Safari print preview. */
   .postal{
     display:block!important;
     position:relative!important;
@@ -44,7 +42,7 @@
   .postal-digit:nth-child(4){left:39.10mm!important}
   .postal-digit:nth-child(5){left:48.30mm!important}
   .postal-digit:nth-child(6){left:57.50mm!important}
-  .postal-digit:nth-child(7){left:66.70mm!important;z-index:10!important}
+  .postal-digit:nth-child(7){left:61.70mm!important;z-index:10!important}
 
   .v-address{line-height:1.5;font-weight:400}
   .v-company{font-weight:700;line-height:1.45}
