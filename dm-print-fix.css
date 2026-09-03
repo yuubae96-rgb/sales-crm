@@ -44,7 +44,8 @@
   .postal-digit:nth-child(4){left:0.9mm!important}
   .postal-digit:nth-child(5){left:1.1mm!important}
   .postal-digit:nth-child(6){left:1.4mm!important}
-  .postal-digit:nth-child(7){left:1.5mm!important}
+  /* Latest print shows digit 7 occupying digit 6's box: move it one full box to the right. */
+  .postal-digit:nth-child(7){left:8.95mm!important}
 
   .v-address{line-height:1.5;font-weight:400}
   .v-company{font-weight:700;line-height:1.45}
