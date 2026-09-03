@@ -4,13 +4,14 @@
   html,body{margin:0!important;padding:0!important;width:100mm!important;background:#fff!important}
   .postcard{margin:0!important;padding:0;width:100mm!important;height:148mm!important}
 
-  /* Postal code: each digit gets the actual printed-box pitch.
-     Do not use letter-spacing: cumulative spacing error pushes the 7th digit
-     left of the final box. 7 x 6.6mm + 1.9mm group gap = 48.1mm. */
+  /* Postal code: each digit is independent. The actual postcard frame has
+     a full-box jump between the 3-digit and 4-digit groups in this print
+     layout, so the group gap must include one extra 6.6mm box pitch.
+     This keeps digits 1-3 unchanged and moves digits 4-7 one box right. */
   .postal{
     display:flex!important;
     align-items:center;
-    width:48.1mm;
+    width:54.7mm;
     height:7mm;
     font-weight:500;
     letter-spacing:0!important;
@@ -29,7 +30,7 @@
     line-height:1;
     font-variant-numeric:tabular-nums;
   }
-  .postal-digit:nth-child(3){margin-right:1.9mm}
+  .postal-digit:nth-child(3){margin-right:8.5mm}
 
   .v-address{line-height:1.5;font-weight:400}
   .v-company{font-weight:700;line-height:1.45}
