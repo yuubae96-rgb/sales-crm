@@ -15,7 +15,7 @@
     font-weight:500;
     letter-spacing:0!important;
     white-space:normal!important;
-    transform:translate(-2mm,-19.5mm)!important;
+    transform:translate(-2mm,-20mm)!important;
     transform-origin:left top;
   }
   .postal-digit{
@@ -36,8 +36,8 @@
   .postal-digit:nth-child(3){left:-0.10mm;margin-right:5.65mm}
   .postal-digit:nth-child(4){left:-0.20mm}
   .postal-digit:nth-child(5){left:-0.25mm}
-  .postal-digit:nth-child(6){left:1.95mm}
-  .postal-digit:nth-child(7){left:2.00mm}
+  .postal-digit:nth-child(6){left:2.45mm}
+  .postal-digit:nth-child(7){left:3.00mm}
 
   .v-address{line-height:1.5;font-weight:400}
   .v-company{font-weight:700;line-height:1.45}
