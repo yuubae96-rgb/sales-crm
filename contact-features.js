@@ -57,7 +57,7 @@
 
   if(!byId('contactSearchBox')){
     const search=document.createElement('div');search.id='contactSearchBox';search.className='person-search-box';
-    search.innerHTML=`<label for="contactSearchInput">人物を検索</label><input id="contactSearchInput" type="search" placeholder="氏名・会社名・部署・役職・電話・メールで検索" autocomplete="off"><div class="person-filter-row"><label><input type="checkbox" id="keyPersonOnly">★ キーマンだけ表示</label></div><div id="personResultCount" class="person-result-count"></div>`;
+    search.innerHTML=`<label for="contactSearchInput">人物名・会社名で検索</label><input id="contactSearchInput" type="search" placeholder="人物名・会社名・部署・役職・電話・メールで検索" autocomplete="off"><div class="person-filter-row"><label><input type="checkbox" id="keyPersonOnly">★ キーマンだけ表示</label></div><div id="personResultCount" class="person-result-count"></div>`;
     byId('contactListButton').insertAdjacentElement('afterend',search);
   }
 
@@ -108,7 +108,7 @@
   }
   async function loadContacts(){try{const [people,cos]=await Promise.all([apiGetAll('/rest/v1/contacts?select=*&order=is_key_person.desc,name.asc'),apiGetAll('/rest/v1/companies?select=id,company_name')]);allPeople=people;companyNames=new Map(cos.map(c=>[String(c.id),c.company_name||'']));renderContacts()}catch(e){alert(e.message)}}
 
-  byId('contactListButton').onclick=loadContacts;byId('contactSearchInput').oninput=()=>{if(allPeople.length)renderContacts()};byId('keyPersonOnly').onchange=()=>{if(allPeople.length)renderContacts()};
+  byId('contactListButton').onclick=loadContacts;byId('contactSearchInput').oninput=()=>{if(allPeople.length)renderContacts();else loadContacts()};byId('keyPersonOnly').onchange=()=>{if(allPeople.length)renderContacts()};
   byId('manualContactButton').onclick=async()=>{const form=byId('manualContactForm');const open=form.classList.contains('hidden');form.classList.toggle('hidden');if(open&&!companies.length){try{await loadCompanies()}catch(e){alert('会社一覧の取得に失敗しました：'+e.message)}}};
   byId('saveManualContactButton').onclick=async function(){
     const companyName=(byId('manualCompanyName').value||'').trim(),name=(byId('manualPersonName').value||'').trim();if(!companyName)return alert('会社名を入力してください');if(!name)return alert('氏名を入力してください');this.disabled=true;this.textContent='登録中…';
