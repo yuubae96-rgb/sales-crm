@@ -102,33 +102,3 @@
   new MutationObserver(()=>queueMicrotask(enhanceCompany)).observe(profile,{childList:true,subtree:false});enhanceCompany();
 })();
 
-(()=>{
-  const U='https://emauqxftmauvsffdjvyh.supabase.co';
-  const K='sb_publishable_9rgwKLiJU9dGVkqttq0-fQ_hrhNqnfa';
-  const A='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJlbWF1cXhmdG1hdXZzZmZkanZ5aCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzg2ODY4NDc5LCJleHAiOjIxMDI0NDQ0Nzl9.iN2xz71VCeP7o6nz89v0wJMrUYkGyPKATtWaCl-MIO4';
-  const H={apikey:K,Authorization:`Bearer ${A}`};
-  const profile=document.getElementById('companyProfile');if(!profile)return;
-  const style=document.createElement('style');style.textContent=`.company-keyman-star{width:48px!important;min-width:48px;height:48px;margin:0 0 8px 10px!important;padding:0!important;border-radius:50%!important;font-size:27px!important;line-height:48px;background:#eee;color:#aaa;border:0;float:right}.company-keyman-star.active{background:#fff0ad;color:#d89b00}.company-keyman-label{font-size:13px;color:#777;margin-left:5px}`;document.head.appendChild(style);
-  let busy=false;
-  async function enhanceKeymen(){
-    if(busy||profile.classList.contains('hidden'))return;
-    const m=location.hash.match(/^#company-(.+)$/);if(!m)return;
-    const companyId=decodeURIComponent(m[1]);
-    const cards=[...profile.querySelectorAll('.contact-person-card')];if(!cards.length)return;
-    busy=true;
-    try{
-      const r=await fetch(`${U}/rest/v1/contacts?company_id=eq.${encodeURIComponent(companyId)}&select=id,name,is_key_person`,{headers:H});const people=await r.json();if(!r.ok)throw Error('キーマン情報を取得できませんでした');
-      const unused=[...people];
-      for(const card of cards){
-        if(card.querySelector('.company-keyman-star'))continue;
-        const name=card.querySelector('strong')?.textContent?.trim()||'';
-        const idx=unused.findIndex(p=>(p.name||'').trim()===name);if(idx<0)continue;
-        const p=unused.splice(idx,1)[0];
-        const btn=document.createElement('button');btn.type='button';btn.className=`company-keyman-star ${p.is_key_person?'active':''}`;btn.textContent='★';btn.title=p.is_key_person?'キーマン登録済み':'キーマンに登録';btn.setAttribute('aria-label',btn.title);
-        btn.onclick=async()=>{const next=!btn.classList.contains('active');btn.disabled=true;try{const pr=await fetch(`${U}/rest/v1/contacts?id=eq.${encodeURIComponent(p.id)}`,{method:'PATCH',headers:{...H,'Content-Type':'application/json'},body:JSON.stringify({is_key_person:next})});if(!pr.ok)throw Error('キーマンの保存に失敗しました');btn.classList.toggle('active',next);btn.title=next?'キーマン登録済み':'キーマンに登録';btn.setAttribute('aria-label',btn.title)}catch(e){alert(e.message)}finally{btn.disabled=false}};
-        card.prepend(btn);
-      }
-    }catch(e){console.warn(e)}finally{busy=false}
-  }
-  new MutationObserver(()=>queueMicrotask(enhanceKeymen)).observe(profile,{childList:true,subtree:true});enhanceKeymen();
-})();
