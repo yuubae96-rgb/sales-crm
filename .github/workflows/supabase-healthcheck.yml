@@ -20,5 +20,5 @@ jobs:
         run: |
           curl --fail --silent --show-error --head --retry 2 --max-time 30 \
             -H "apikey: $SUPABASE_PUBLISHABLE_KEY" \
-            "$SUPABASE_URL/rest/v1/companies?select=id&limit=1" > /dev/null
+            "$SUPABASE_URL/rest/v1/rpc/app_healthcheck" > /dev/null
           echo "Sales CRM database responded successfully."
