@@ -1,0 +1,24 @@
+name: Supabase daily health check
+on:
+  schedule:
+    - cron: '17 0,8,16 * * *'
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/supabase-healthcheck.yml'
+permissions:
+  contents: read
+jobs:
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check sales CRM database without downloading customer data
+        env:
+          SUPABASE_URL: https://emauqxftmauvsffdjvyh.supabase.co
+          SUPABASE_PUBLISHABLE_KEY: sb_publishable_9rgwKLiJU9dGVkqttq0-fQ_hrhNqnfa
+        run: |
+          curl --fail --silent --show-error --head --retry 2 --max-time 30 \
+            -H "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+            "$SUPABASE_URL/rest/v1/companies?select=id&limit=1" > /dev/null
+          echo "Sales CRM database responded successfully."
