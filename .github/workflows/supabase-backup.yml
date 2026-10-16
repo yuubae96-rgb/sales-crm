@@ -1,0 +1,30 @@
+name: Private Supabase backups
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '15 19 * * *'
+permissions:
+  contents: read
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install backup tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+          python -m pip install --disable-pip-version-check google-api-python-client google-auth requests
+      - name: Backup both projects to private Drive
+        env:
+          SALES_DB_URL: ${{ secrets.SALES_DB_URL }}
+          MITSUMORI_DB_URL: ${{ secrets.MITSUMORI_DB_URL }}
+          SALES_SUPABASE_URL: https://emauqxftmauvsffdjvyh.supabase.co
+          MITSUMORI_SUPABASE_URL: https://vnnvuxccazkdzwqjmntz.supabase.co
+          SALES_SERVICE_ROLE_KEY: ${{ secrets.SALES_SERVICE_ROLE_KEY }}
+          MITSUMORI_SERVICE_ROLE_KEY: ${{ secrets.MITSUMORI_SERVICE_ROLE_KEY }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          SALES_DRIVE_FOLDER: 1cN0PufcxOD8rqhKm1IiM2lnNeExbL0hp
+          MITSUMORI_DRIVE_FOLDER: 1QsgvPLgC5yXfTWV9ILVg0KB5ZzECS30r
+        run: python scripts/backup_supabase.py
